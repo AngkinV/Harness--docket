@@ -26,7 +26,7 @@ export function UIIcon({ kind }: { kind: string }) {
 }
 
 const focusable = 'button, [href], input:not([type=hidden]), select, textarea, summary, [tabindex]'
-/** Modal-only focus scope. The conversation remains a non-modal companion panel. */
+/** Focus scope for plugin modal panels. */
 export function useDialogFocus(ref: RefObject<HTMLElement>, onClose: () => void) {
   const close = useRef(onClose); close.current = onClose
   useEffect(() => {

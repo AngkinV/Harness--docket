@@ -1,6 +1,6 @@
 {
   "name": "harness-docket",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Harness- docket — 页面行走、FBX 动作库与表情互动的 3D 伙伴。",
   "type": "module",
   "main": "./lib/index.js",

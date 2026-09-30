@@ -43,16 +43,16 @@ body[data-ds-dark-theme] .hdk-ui {
 .hdk-ui.hdk-ui :where(input[type=range]){min-height:24px}
 .hdk-ui.hdk-ui :where(input:not([type=checkbox]):not([type=range]):not([type=file]),select,textarea){min-width:0;min-height:36px;padding:6px 10px;border:1px solid var(--hdk-line);border-radius:var(--hdk-radius);background:var(--hdk-field);color:var(--hdk-text);font:inherit}
 .hdk-ui.hdk-ui :where(textarea)::placeholder{color:var(--hdk-muted);opacity:1}
-.hdk-ui.hdk-ui :is(.dba-btn,.hda-primary,.hda-secondary,.hda-danger,.hda-upload,.hda-chat button){display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:6px 12px;border:1px solid var(--hdk-line);border-radius:var(--hdk-radius);background:transparent;color:var(--hdk-text);font:inherit;font-size:14px;line-height:22px;box-shadow:none;transition:background .12s,color .12s,border-color .12s}
-.hdk-ui.hdk-ui :is(.dba-btn,.hda-secondary,.hda-upload,.hda-chat button):hover:not(:disabled){background:var(--hdk-hover)}
-.hdk-ui.hdk-ui :is(.dba-btn-preview,.hda-primary,.hda-chat button[type=submit]){background:var(--hdk-primary);border-color:transparent;color:var(--hdk-on-primary);font-weight:500}
-.hdk-ui.hdk-ui :is(.dba-btn-preview,.hda-primary,.hda-chat button[type=submit]):hover:not(:disabled){background:var(--hdk-primary-hover);color:var(--hdk-on-primary)}
+.hdk-ui.hdk-ui :is(.dba-btn,.hda-primary,.hda-secondary,.hda-danger,.hda-upload){display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:6px 12px;border:1px solid var(--hdk-line);border-radius:var(--hdk-radius);background:transparent;color:var(--hdk-text);font:inherit;font-size:14px;line-height:22px;box-shadow:none;transition:background .12s,color .12s,border-color .12s}
+.hdk-ui.hdk-ui :is(.dba-btn,.hda-secondary,.hda-upload):hover:not(:disabled){background:var(--hdk-hover)}
+.hdk-ui.hdk-ui :is(.dba-btn-preview,.hda-primary){background:var(--hdk-primary);border-color:transparent;color:var(--hdk-on-primary);font-weight:500}
+.hdk-ui.hdk-ui :is(.dba-btn-preview,.hda-primary):hover:not(:disabled){background:var(--hdk-primary-hover);color:var(--hdk-on-primary)}
 .hdk-ui.hdk-ui :is(.hda-danger,.hda-text-danger){color:var(--hdk-danger)}
 .hdk-ui.hdk-ui .hda-danger{border-color:color-mix(in srgb,var(--hdk-danger) 35%,var(--hdk-line));background:var(--hdk-danger-bg)}
 .hdk-ui.hdk-ui .hda-danger:hover:not(:disabled){background:color-mix(in srgb,var(--hdk-danger) 12%,var(--hdk-surface))}
-.hdk-ui.hdk-ui :is(.hda-text-button,.hda-icon-button,.hda-small-button,.dba-close,.dba-delete,.dba-refresh,.hda-chat header button){display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:4px 8px;border:1px solid transparent;border-radius:var(--hdk-radius);background:transparent;color:var(--hdk-muted);font-size:13px;box-shadow:none}
+.hdk-ui.hdk-ui :is(.hda-text-button,.hda-icon-button,.hda-small-button,.dba-close,.dba-delete,.dba-refresh){display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:4px 8px;border:1px solid transparent;border-radius:var(--hdk-radius);background:transparent;color:var(--hdk-muted);font-size:13px;box-shadow:none}
 .hdk-ui.hdk-ui :is(.hda-icon-button,.hda-small-button,.dba-close,.dba-delete){width:32px;min-width:32px;padding:0;border-radius:var(--hdk-radius)}
-.hdk-ui.hdk-ui :is(.hda-icon-button,.hda-small-button,.dba-close,.dba-delete,.dba-refresh,.hda-chat header button):hover:not(:disabled){background:var(--hdk-hover);color:var(--hdk-text)}
+.hdk-ui.hdk-ui :is(.hda-icon-button,.hda-small-button,.dba-close,.dba-delete,.dba-refresh):hover:not(:disabled){background:var(--hdk-hover);color:var(--hdk-text)}
 .hdk-ui.hdk-ui .dba-delete:hover:not(:disabled){background:var(--hdk-danger-bg);color:var(--hdk-danger)}
 .hdk-ui .hdk-icon{width:16px;height:16px;flex-shrink:0}
 .hdk-ui.hdk-ui :is(.hda-tabs,.dba-tabs){gap:24px}
@@ -64,7 +64,7 @@ body[data-ds-dark-theme] .hdk-ui {
 .hdk-ui.hdk-ui :is(.hda-header,.dba-header){padding:20px 24px 16px;gap:16px}
 .hdk-ui.hdk-ui :is(.hda-dialog,.dba-lib){border:1px solid var(--hdk-line);border-radius:var(--hdk-panel-radius);background:var(--hdk-surface);box-shadow:var(--hdk-shadow);color:var(--hdk-text);font:inherit;outline:none}
 .hdk-ui.hdk-ui :is(.hda-footer,.dba-footer){padding:16px 24px;background:var(--hdk-surface);border-top:1px solid var(--hdk-line)}
-.hdk-ui.hdk-ui :is(.hda-body,.dba-content,.hda-model-list,.hda-chat-messages,.hda-chat-settings){overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--hdk-line) transparent}
+.hdk-ui.hdk-ui :is(.hda-body,.dba-content,.hda-model-list){overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--hdk-line) transparent}
 .hdk-ui.hdk-ui .dba-fit .dba-btn{min-height:32px;padding:4px 8px;border:0;background:transparent;font-size:12px;color:var(--hdk-muted)}
 .hdk-ui.hdk-ui .dba-fit .dba-btn[aria-pressed=true]{background:var(--hdk-surface);color:var(--hdk-text);box-shadow:0 0 0 1px var(--hdk-line)}
 .hdk-ui.hdk-ui .hda-text-danger{color:var(--hdk-danger)}
@@ -72,5 +72,5 @@ body[data-ds-dark-theme] .hdk-ui {
 .hdk-ui.hdk-ui .dba-count{padding:0;background:transparent;color:var(--hdk-muted);font-size:12px;font-weight:400}
 @media(max-width:650px){.hdk-ui.hdk-ui :is(.hda-header,.dba-header){padding:16px}.hdk-ui.hdk-ui :is(.hda-footer,.dba-footer){padding:12px 16px}}
 @media(max-width:520px){.hdk-ui.hdk-ui .dba-tabs{gap:16px}.hdk-ui.hdk-ui .dba-upload{padding-inline:8px;flex-shrink:0}.hdk-ui.hdk-ui .dba-toolbar{gap:8px}}
-@media(pointer:coarse){.hdk-ui.hdk-ui :is(.dba-btn,.hda-primary,.hda-secondary,.hda-danger,.hda-upload,.hda-icon-button,.hda-small-button,.hda-text-button,.hda-tabs button,.hda-chat button){min-height:44px}.hdk-ui.hdk-ui :is(.dba-close,.dba-delete,.hda-icon-button,.hda-small-button){min-width:44px;width:44px}}
+@media(pointer:coarse){.hdk-ui.hdk-ui :is(.dba-btn,.hda-primary,.hda-secondary,.hda-danger,.hda-upload,.hda-icon-button,.hda-small-button,.hda-text-button,.hda-tabs button){min-height:44px}.hdk-ui.hdk-ui :is(.dba-close,.dba-delete,.hda-icon-button,.hda-small-button){min-width:44px;width:44px}}
 @media(prefers-reduced-motion:reduce){.hdk-ui *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

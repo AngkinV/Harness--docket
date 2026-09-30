@@ -10,7 +10,7 @@ import { useAttachedMenu, MenuToggle, LayoutDebug, type MenuPreferences } from '
 import { overlapsMask } from './attached-menu-layout.js'
 import { advanceRoam } from './companion-roam.js'
 import { AlphaCharacter } from './alpha-character'
-import { CompanionConversation } from './companion-conversation'
+import { CompanionNotice, CompanionVoiceSettings, useCompanionVoice, type CompanionVoice } from './companion-feedback'
 import { PocketMenu } from './pocket-menu'
 import { pocketMenuLayout } from './pocket-menu-layout.js'
 import { useWorkStatus } from './work-status'
@@ -124,7 +124,7 @@ export function AvatarDock({ sessionId, isPinned, playerDisabled, playerTitle, o
   const reactionKind = useRef('click'), work = useWorkStatus(sessionId), [finishedWork, setFinishedWork] = useState('')
   const workKey = sessionId + ':' + work.revision, workState = finishedWork === workKey ? null : work.state
   useEffect(() => { workSeconds.current = 0 }, [workKey])
-  const [chatOpen, setChatOpen] = useState(false), [speaking, setSpeaking] = useState(false)
+  const [speaking, setSpeaking] = useState(false)
   const [retry, setRetry] = useState(0)
   const [expanded, setExpandedState] = useState(false), [manager, setManager] = useState(false), [covered, setCovered] = useState(false)
   const [position, setPosition] = useState(initialPosition), [viewport, setViewport] = useState({ left: 0, top: 0, width: window.innerWidth, height: window.innerHeight })
@@ -137,7 +137,7 @@ export function AvatarDock({ sessionId, isPinned, playerDisabled, playerTitle, o
   useEffect(() => { const media = matchMedia('(pointer:coarse)'); const change = () => setTouch(media.matches); media.addEventListener('change', change); return () => media.removeEventListener('change', change) }, [])
   const selected = catalog?.items.find(i => i.id === catalog.activeId) || DEFAULT
   const profile = companion.profiles[selected.id] || defaultProfile(selected.human && selected.source !== 'builtin' ? companion : undefined)
-  useEffect(() => { setChatOpen(false) }, [selected.id, sessionId])
+  const voice = useCompanionVoice(selected.id + ':' + sessionId, suspended || covered || dragging, setSpeaking)
   const alpha = selected.format === 'alpha-video'
   const thought = companion.assets.find(asset => asset.kind === 'motion' && (asset as any).key === 'think')
   const workInteraction = profile.interactions.find(i => i.id === profile.events?.[workState || ''] && i.enabled)
@@ -196,7 +196,6 @@ export function AvatarDock({ sessionId, isPinned, playerDisabled, playerTitle, o
       frame = requestAnimationFrame(tick)
       if (last && now - last < 32) return
       const delta = last ? Math.min(.08, (now - last) / 1000) : 0; last = now
-      if (chatOpen) { setWalking(false); setHeading(0); return }
       if (expanded || pocketBusy.current) return
       if (!renderReady || !profile.roaming || reduced.matches || document.hidden || suspended || covered || manager || expanded || hovered || workState || trigger.current?.matches(':focus-visible') || drag.current || reactionRef.current !== null) { setWalking(false); return }
       if (now < waitUntil) { setWalking(false); return }
@@ -208,7 +207,7 @@ export function AvatarDock({ sessionId, isPinned, playerDisabled, playerTitle, o
     }
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [renderReady, profile.roaming, profile.speed, suspended, covered, manager, expanded, chatOpen, hovered, workState, maxX, maxY, height])
+  }, [renderReady, profile.roaming, profile.speed, suspended, covered, manager, expanded, hovered, workState, maxX, maxY, height])
   useEffect(() => { setPosition(positionRef.current) }, [expanded, manager, hovered, suspended])
   const interact = () => {
     setExpanded(false)
@@ -251,7 +250,7 @@ export function AvatarDock({ sessionId, isPinned, playerDisabled, playerTitle, o
             if (activity.current.advance(delta)) { reactionRef.current = null; setReaction(null); setReactionStarted(false) }
             if (reactionRef.current) return
             if (workState) { if (['success', 'error'].includes(workState)) { workSeconds.current += delta; if (workSeconds.current >= 4) setFinishedWork(workKey) }; return }
-            if (chatOpen || hovered || paused || !renderReady || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+            if (hovered || paused || !renderReady || matchMedia('(prefers-reduced-motion: reduce)').matches) return
             dailySeconds.current += delta
             const next = dailyPicker.current(dailySeconds.current, profile)
             if (next) { reactionKind.current = 'daily'; reactionRef.current = next; setReaction(next); setWalking(false); setReactionStarted(false); setReactionRevision(activity.current.begin(next.duration)) }
@@ -274,16 +273,15 @@ export function AvatarDock({ sessionId, isPinned, playerDisabled, playerTitle, o
           )}
       </PocketMenu>
 
-      {!chatOpen && <button type="button" className="hda-chat-open" data-open={expanded} style={{ left: Math.max(0, Math.min(width - 44, (measured?.mask?.body?.left || width * .3))), top: Math.max(0, (measured?.mask?.body?.top || height * .45) - 28) }} onClick={() => { setExpanded(false); setChatOpen(true) }}>聊聊</button>}
       <LayoutDebug measurement={measured} layout={layout}/>
 
     </nav>
-    <CompanionConversation key={selected.id + ':' + sessionId} open={chatOpen} onClose={() => setChatOpen(false)} name={selected.name} characterId={selected.id} suspended={suspended || manager || covered || dragging} settling={!!pocketFrame?.active} onSpeaking={setSpeaking} viewport={viewport} body={{ left: left + (measured?.mask?.body?.left || width * .3), right: left + (measured?.mask?.body?.right || width * .7), top: top + (measured?.mask?.body?.top || height * .45), bottom: top + (measured?.mask?.body?.bottom || height * .95) }}/>
+    <CompanionNotice key={selected.id + ':' + sessionId} suspended={suspended || manager || covered || dragging} settling={!!pocketFrame?.active} voice={voice}/>
       {expanded && failure && <div className="hda-menu-notice hdk-ui" role="status">{failure}{failure && <button onClick={() => { setRetry(value => value + 1); void load().catch(e => setFailure(message(e))) }}>重试</button>}</div>}
-    {manager && <AvatarManager onChat={() => { setManager(false); setExpanded(false); setChatOpen(true) }} companion={companion} reloadCompanion={reloadCompanion} catalog={catalog} reload={load} onClose={closeManager} position={position} onSize={size => { const next = { ...position, size }; setPosition(next); persist(next) }} onReset={() => { const next = { x: .94, y: .75, size: 210 }; setPosition(next); persist(next) }}/>}</>
+    {manager && <AvatarManager voice={voice} companion={companion} reloadCompanion={reloadCompanion} catalog={catalog} reload={load} onClose={closeManager} position={position} onSize={size => { const next = { ...position, size }; setPosition(next); persist(next) }} onReset={() => { const next = { x: .94, y: .75, size: 210 }; setPosition(next); persist(next) }}/>}</>
 }
 
-function AvatarManager({ onChat, companion, reloadCompanion, catalog, reload, onClose, position, onSize, onReset }: { onChat: () => void; companion: CompanionData; reloadCompanion: () => Promise<void>; catalog: Catalog | null; reload: () => Promise<Catalog>; onClose: () => void; position: Position; onSize: (size: number) => void; onReset: () => void }) {
+function AvatarManager({ voice, companion, reloadCompanion, catalog, reload, onClose, position, onSize, onReset }: { voice: CompanionVoice; companion: CompanionData; reloadCompanion: () => Promise<void>; catalog: Catalog | null; reload: () => Promise<Catalog>; onClose: () => void; position: Position; onSize: (size: number) => void; onReset: () => void }) {
   const [previewId, setPreviewId] = useState(catalog?.activeId || DEFAULT.id), [ready, setReady] = useState(''), [error, setError] = useState(''), [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false), [progress, setProgress] = useState<number | null>(null), [action, setAction] = useState('walk'), [bones, setBones] = useState(false), [angle, setAngle] = useState(0), [confirmDelete, setConfirmDelete] = useState(false)
   const [settingsDirty, setSettingsDirty] = useState(false), [settingsBusy, setSettingsBusy] = useState(false), [closing, setClosing] = useState(false), [pendingModel, setPendingModel] = useState('')
@@ -336,7 +334,6 @@ function AvatarManager({ onChat, companion, reloadCompanion, catalog, reload, on
       <header className="hda-header"><div><h2 id="hda-title">角色管理</h2><p className="hdk-identity">Harness- docket · 插件</p></div><button className="hda-icon-button" onClick={askClose} aria-label="关闭角色管理"><Icon kind="close"/></button></header>
       <div className="hda-navigation">
       <div className="hda-tabs" onKeyDown={tabKeys} role="tablist" aria-label="伙伴设置">{[['model', '角色'], ...(item.format === 'alpha-video' ? [] : [['motion', '动作库']]), ['interaction', '互动']].map(([value, label]) => <button key={value} role="tab" id={"hda-tab-" + value} aria-controls="hda-settings-panel" tabIndex={tab === value ? 0 : -1} aria-selected={tab === value} onClick={() => { setTab(value); setPreviewInteraction(null) }}>{label}</button>)}</div>
-      <button type="button" className="hda-manager-chat hda-text-button" disabled={settingsDirty || busy || settingsBusy} onClick={onChat}>对话与声音</button>
       </div>
       <div className="hda-body" id="hda-settings-panel" role="tabpanel" aria-labelledby={"hda-tab-" + tab}>
         <section className="hda-stage" data-tab={tab} aria-label="角色预览">
@@ -351,6 +348,8 @@ function AvatarManager({ onChat, companion, reloadCompanion, catalog, reload, on
           </div>
         </section>
         <div className="hda-editor-column"><section className="hda-picker" aria-label="角色列表" hidden={tab !== 'model'}>
+          <p className="hda-help hda-main-chat-guide">直接在 Harness 主输入框提问、继续任务。人物会随当前会话状态作出反馈；点击人物可互动。</p>
+          {tab === 'model' && <CompanionVoiceSettings voice={voice}/>}
           <div className="hda-section-title"><h3>角色收藏 <span>{items.length}</span></h3><button className="hda-small-button" disabled={busy} onClick={() => void perform(async () => { await reload(); setNotice('角色列表已刷新') })} aria-label="刷新角色列表"><Icon kind="reset"/></button></div>
           <div className="hda-model-list">
             {items.map(model => <button key={model.id} className={'hda-model' + (model.id === item.id ? ' hda-selected' : '')} disabled={busy} aria-label={'预览角色 ' + model.name} aria-pressed={model.id === item.id} onClick={() => choose(model.id)}>

@@ -1,6 +1,6 @@
 # Harness- docket
 
-A DeepSeek Harness companion and session-intro plugin: draggable characters, VRM/GLB models, FBX motions, expressions, stickers, a video library, and optional character chat.
+A DeepSeek Harness companion and session-intro plugin: draggable characters, VRM/GLB models, FBX motions, expressions, stickers, a video library, and main-session feedback.
 
 ## Install
 
@@ -18,7 +18,7 @@ dsh plugin --profile web add https://github.com/AngkinV/Harness--docket --ignore
 
 Reload as prompted by Harness. Node.js 20+ and Harness 0.1.7-rc.2+ are required. Precompiled files are included; installation needs no build scripts. URL installation does not imply inclusion in the official curated catalog.
 
-The built-in character works immediately. Click to interact; right-click or use `···` to open the menu. Upload your own videos in Library and your own VRM/GLB models or Mixamo-compatible FBX motions in Character. The public edition excludes the developer's models, motion samples, and sample intro videos. Its video and external-motion libraries start empty. Chat requires explicit opt-in and a configured Harness model. Speech is off by default.
+The built-in character works immediately. Click to interact; right-click or use `···` to open the menu. Upload your own videos in Library and your own VRM/GLB models or Mixamo-compatible FBX motions in Character. The public edition excludes the developer's models, motion samples, and sample intro videos. Its video and external-motion libraries start empty. Use the Harness main composer for questions and tasks; the character follows the current session state. Optional playback-notice speech is configured in Character management and is off by default.
 
 ## Develop and release
 

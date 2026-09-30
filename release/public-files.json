@@ -42,7 +42,6 @@
     "lib/client.js",
     "lib/clips.data.js",
     "lib/clips.meta.js",
-    "lib/companion-chat.js",
     "lib/companion-store.js",
     "lib/fbx-validation.js",
     "lib/http.js",
@@ -85,7 +84,7 @@
     "src/client/avatar.css",
     "src/client/companion-behavior.js",
     "src/client/companion-controls.tsx",
-    "src/client/companion-conversation.tsx",
+    "src/client/companion-feedback.tsx",
     "src/client/companion-motion.js",
     "src/client/companion-random.js",
     "src/client/companion-roam.js",
@@ -111,7 +110,6 @@
     "src/client/ui.css",
     "src/client/ui.tsx",
     "src/client/work-status.ts",
-    "src/companion-chat.js",
     "src/companion-store.js",
     "src/fbx-validation.js",
     "src/host.js",
@@ -138,5 +136,9 @@
     "NOTICE.md",
     "assets/pets"
   ],
-  "retiredFiles": []
+  "retiredFiles": [
+    "lib/companion-chat.js",
+    "src/client/companion-conversation.tsx",
+    "src/companion-chat.js"
+  ]
 }
