@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: 24
       - run: node release/check-public.mjs --git
-      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm ci --legacy-peer-deps --ignore-scripts --no-audit --no-fund
       - run: npm run build && npm run typecheck
       - run: git diff --exit-code -- lib
       - run: npm run check:public

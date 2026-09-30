@@ -37,7 +37,7 @@ node scripts/export-public.mjs <唯一run-id>
 ```sh
 node release/check-public.mjs
 node release/check-public.mjs --git
-npm ci --ignore-scripts --no-audit --no-fund
+npm ci --legacy-peer-deps --ignore-scripts --no-audit --no-fund
 npm run build
 npm run typecheck
 git diff --exit-code -- lib
