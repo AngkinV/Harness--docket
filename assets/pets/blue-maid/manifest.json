@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "id": "alpha:blue-maid",
+  "name": "蓝毛小女仆",
+  "version": "0521efa5-2",
+  "sourceUrl": "https://github.com/PC2005-cloud/dsh-pet",
+  "license": "素材仅限非商用；介绍、展示、分发须标注原作者 GitHub 地址。",
+  "width": 640,
+  "height": 360,
+  "foot": 330,
+  "body": {
+    "left": 240,
+    "top": 80,
+    "right": 400,
+    "bottom": 330
+  },
+  "clips": {
+    "idle": {
+      "file": "idle.webm",
+      "original": "待机呼吸休闲.webm",
+      "bytes": 441437,
+      "sha256": "deb965d05a85dacf5ff4a20faa757846f0d11679598c3ec578a5571487660395",
+      "hevc": {
+        "file": "idle.mov",
+        "bytes": 1809619,
+        "sha256": "7ebe0ef1eb9117358f253f090429cca9912b0d84cb91aecc6e58dde7180535eb"
+      }
+    },
+    "head": {
+      "file": "head.webm",
+      "original": "东张西望.webm",
+      "bytes": 427005,
+      "sha256": "a20ed02ccc5e72075a3ca83fabb57d9aac5ded699f52d00ec6de72069799fcd5",
+      "hevc": {
+        "file": "head.mov",
+        "bytes": 1671352,
+        "sha256": "b567c1636b349bff2a8d0cfda6a86d4afb097f87c2dd0a2bf34b39e138fa1f16"
+      }
+    },
+    "walk": {
+      "file": "walk.webm",
+      "original": "螃蟹走路.webm",
+      "bytes": 596902,
+      "sha256": "5696b0878be38cc450d6eaace837aef1c1b5834f1382bc6c11c2de582f284673",
+      "hevc": {
+        "file": "walk.mov",
+        "bytes": 1902426,
+        "sha256": "63b5e399e9341e20bf2251647c3b23bd9a79130256ede5c5c744ce76e4aa3321"
+      }
+    },
+    "drag": {
+      "file": "drag.webm",
+      "original": "被鼠标拖拽悬空反馈.webm",
+      "bytes": 464764,
+      "sha256": "31373a86026636eecc890db763760309360310eb095cf5575b13c9ca2a6cc80e",
+      "hevc": {
+        "file": "drag.mov",
+        "bytes": 1808769,
+        "sha256": "f8d12d63f3eac70f121d7547efb7079ff7d493b78da63fedbbc2e4f6057e8f0f"
+      }
+    },
+    "click1": {
+      "file": "click1.webm",
+      "original": "点击回应-元气挥手.webm",
+      "bytes": 421669,
+      "sha256": "48cd729ccdcf746369942ea954d242e9afdd5643e1dac3827fa5e67450eb8776",
+      "hevc": {
+        "file": "click1.mov",
+        "bytes": 1610153,
+        "sha256": "2bb70dcf5b3ea92499635b676837d16a2b45c43f6c7dd7400fcf26ecf8384c7b"
+      }
+    },
+    "click2": {
+      "file": "click2.webm",
+      "original": "点击回应-害羞惊讶.webm",
+      "bytes": 538281,
+      "sha256": "a04968bbc46d1ebea07f81e5dabd93b0b67a9d07f1371e9887b33075134ad00d",
+      "hevc": {
+        "file": "click2.mov",
+        "bytes": 1876416,
+        "sha256": "75644bb8a22249f79ff654d5ced93b2a093a4e8dbfff49184c5e48e03e2d9a26"
+      }
+    },
+    "thinking": {
+      "file": "thinking.webm",
+      "original": "工作状态-思考冒泡.webm",
+      "bytes": 408849,
+      "sha256": "b4a36cfa28ea5d7089e362a01972c6e880297c6dcd0d39f1994efd889a3c1be5",
+      "hevc": {
+        "file": "thinking.mov",
+        "bytes": 1696055,
+        "sha256": "da8b723f5f2302a5bb317f5d485517d2fa8ecbb6acf4902f620bfb587ecbc923"
+      }
+    },
+    "working": {
+      "file": "working.webm",
+      "original": "工作状态-忙碌点按.webm",
+      "bytes": 475613,
+      "sha256": "b5d702e0c04adb7b255ac702001c24da36c8bf95efc891f693f4976986ab2435",
+      "hevc": {
+        "file": "working.mov",
+        "bytes": 1822351,
+        "sha256": "921aa14a596e55becc11b1d271487c663737fd1c1b307d0b61b14c5f753a9134"
+      }
+    },
+    "waiting": {
+      "file": "waiting.webm",
+      "original": "工作状态-原地踱步张望.webm",
+      "bytes": 471725,
+      "sha256": "a56c17ef901fa531324a46a04def2381f65922d319ec83dadde34d2a4669e411",
+      "hevc": {
+        "file": "waiting.mov",
+        "bytes": 1791845,
+        "sha256": "f14077825b907eefc1dc7c2de2002e83facccb74135fa5e6478443b65530d511"
+      }
+    },
+    "success": {
+      "file": "success.webm",
+      "original": "工作状态-雀跃庆祝.webm",
+      "bytes": 488024,
+      "sha256": "3ff681051a0bb4f152d7535d64b7f3194c30298bf56d41e521216a278f135d3e",
+      "hevc": {
+        "file": "success.mov",
+        "bytes": 1679394,
+        "sha256": "de95a2f460de3ff90977307f33ed36ff354df0fdaf10873e6941de0ebe06055c"
+      }
+    },
+    "error": {
+      "file": "error.webm",
+      "original": "工作状态-垂头叹气冒汗.webm",
+      "bytes": 198937,
+      "sha256": "ab00c844e62221905574b4c070e0d7b6fa14fb2afa1064c27a160f10e25f7196",
+      "hevc": {
+        "file": "error.mov",
+        "bytes": 766792,
+        "sha256": "2178c92e2441ea305890334cc6adbf32802c8f18d66524ce9dcaebaa5cc8c23a"
+      }
+    }
+  },
+  "derivatives": {
+    "format": "HEVC with Alpha / QuickTime",
+    "source": "The unchanged WebM clips in this manifest",
+    "encoder": "Apple AVAssetWriter AVVideoCodecType.hevcWithAlpha; BGRA decoded using FFmpeg libvpx-vp9",
+    "script": "scripts/transcode-pet-hevc.mjs",
+    "license": "Same attribution and noncommercial terms as the originals"
+  }
+}

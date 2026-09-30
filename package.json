@@ -1,0 +1,93 @@
+{
+  "name": "harness-docket",
+  "version": "0.9.0",
+  "description": "Harness- docket — 页面行走、FBX 动作库与表情互动的 3D 伙伴。",
+  "type": "module",
+  "main": "./lib/index.js",
+  "types": "./lib/types/index.d.ts",
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "README.en.md",
+    "LICENSE",
+    "locale",
+    "NOTICE.md",
+    "assets/pets"
+  ],
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "cordis",
+    "boot-animation",
+    "intro",
+    "splash",
+    "startup",
+    "harness-docket"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@pixiv/three-vrm": "2.1.3",
+    "@types/node": "22.18.6",
+    "@types/react": "18.3.24",
+    "esbuild": "0.25.12",
+    "three": "0.164.1",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:client": "node scripts/check-css-template.mjs && node scripts/build-client.mjs",
+    "typecheck": "tsc --noEmit",
+    "check:public": "node release/check-public.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "types": "./lib/types/client/index.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-session",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ],
+      "platform": "web"
+    },
+    "engines": {
+      "dsh": ">=0.1.7-rc.2"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AngkinV/Harness--docket.git"
+  },
+  "homepage": "https://github.com/AngkinV/Harness--docket#readme",
+  "bugs": {
+    "url": "https://github.com/AngkinV/Harness--docket/issues"
+  }
+}

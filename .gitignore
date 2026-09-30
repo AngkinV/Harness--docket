@@ -1,0 +1,24 @@
+# Defense in depth; release/public-files.json is the publication allowlist.
+node_modules/
+.work/
+artifacts/
+.lib-staging-*/
+.env*
+.npmrc
+.pnpmrc
+.DS_Store
+AGENT.md
+models/
+*.log
+*.tgz
+*.tar.gz
+*.heapsnapshot
+*.cpuprofile
+*.db
+*.sqlite*
+*.pem
+*.key
+.idea/
+.vscode/
+.agents/
+.codex/

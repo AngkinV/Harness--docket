@@ -1,0 +1,21 @@
+name: Public release checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node release/check-public.mjs --git
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run build && npm run typecheck
+      - run: git diff --exit-code -- lib
+      - run: npm run check:public

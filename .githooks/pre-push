@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+case "$2" in
+  https://github.com/AngkinV/Harness--docket|https://github.com/AngkinV/Harness--docket.git|git@github.com:AngkinV/Harness--docket.git) ;;
+  *) echo 'Push blocked: remote is not the reviewed public repository.' >&2; exit 1 ;;
+esac
+git diff --quiet
+git diff --cached --quiet
+node release/check-public.mjs --git
