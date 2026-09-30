@@ -35,7 +35,7 @@ dsh plugin --profile web add https://github.com/AngkinV/Harness--docket --ignore
 开发推荐 Node.js 24。公开源码和构建脚本均在仓库根目录：
 
 ```sh
-npm ci --ignore-scripts --no-audit --no-fund
+npm ci --legacy-peer-deps --ignore-scripts --no-audit --no-fund
 npm run build
 npm run typecheck
 npm run check:public

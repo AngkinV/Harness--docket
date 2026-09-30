@@ -25,7 +25,7 @@ The built-in character works immediately. Click to interact; right-click or use 
 Use Node.js 24 for development:
 
 ```sh
-npm ci --ignore-scripts --no-audit --no-fund
+npm ci --legacy-peer-deps --ignore-scripts --no-audit --no-fund
 npm run build
 npm run typecheck
 npm run check:public
