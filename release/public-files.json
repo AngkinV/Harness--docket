@@ -8,6 +8,7 @@
     "NOTICE.md",
     "README.en.md",
     "README.md",
+    "assets/pets/blue-maid/022.webp",
     "assets/pets/blue-maid/UPSTREAM-LICENSE",
     "assets/pets/blue-maid/click1.mov",
     "assets/pets/blue-maid/click1.webm",
@@ -139,5 +140,13 @@
     "lib/companion-chat.js",
     "src/client/companion-conversation.tsx",
     "src/companion-chat.js"
+  ],
+  "documentationAssets": [
+    {
+      "path": "assets/pets/blue-maid/022.webp",
+      "bytes": 47374,
+      "sha256": "af7cdc879dfc6de3ee49b970b551d65ce643877a5a978cc5afa9b296fcd3d74d",
+      "sourceUrl": "https://github.com/AngkinV/Harness--docket/blob/d21b19210067640759d621ea973aba40354753b1/assets/pets/blue-maid/022.webp"
+    }
   ]
 }

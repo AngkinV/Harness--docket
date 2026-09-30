@@ -17,7 +17,7 @@ const allowed = new Set(policy.files)
 // are never allowed back into the current tree or installation package.
 const historical = new Set([...allowed, ...(policy.retiredFiles || [])])
 // This generic rules file was already published before it was removed. Recognize
-// only its exact blob in these five existing commits; never permit it in the
+// only its exact blob in these reviewed existing commits; never permit it in the
 // current tree, the allowlists, or a new commit (even with identical contents).
 const publishedAgentRulesBlob = '7662d125d2fcbe8811e3124e5c30ab3f32c2354d'
 const publishedAgentRulesCommits = new Set([
@@ -26,6 +26,7 @@ const publishedAgentRulesCommits = new Set([
   '1b929766ddd266c6280216830a28fb7ceae73742',
   'f17b6fa433271eaf4a9274ccd4f59d6622613073',
   '05d2d3aaaf0d6347883c06bbae10b2499738c83b',
+  '01c6a2c499e80d0849edb6030a1b41cbefa88e21',
 ])
 if (policy.schemaVersion !== 1 || allowed.size !== policy.files.length) fail('Invalid public allowlist')
 const privateName = /(?:^|\/)(?:AGENTS?\.md|\.env[^/]*|\.npmrc|\.pnpmrc|\.work|artifacts|models|reference|node_modules|\.git|\.codex|\.agents)(?:\/|$)|\.(?:vrm|glb|fbx|mp4|log|map|tgz|zip|db|sqlite\w*|pem|key|heapsnapshot)$/i
@@ -65,6 +66,11 @@ for (const file of allowed) if (!files.includes(file)) fail('Missing public file
 let bytes = 0
 for (const file of files) { const data = read(file); bytes += data.length; scan(file, data) }
 if (bytes > 50 * MiB) fail('Public tree exceeds 50 MiB')
+for (const asset of policy.documentationAssets || []) {
+  if (!allowed.has(asset.path) || !Number.isInteger(asset.bytes) || asset.bytes <= 0 || asset.bytes > 5 * MiB || !/^[a-f0-9]{64}$/.test(asset.sha256) || !/^https:\/\/github\.com\/AngkinV\/Harness--docket\/blob\/[a-f0-9]{40}\//.test(asset.sourceUrl)) fail('Invalid documentation asset record')
+  const data = read(asset.path)
+  if (data.length !== asset.bytes || createHash('sha256').update(data).digest('hex') !== asset.sha256) fail('Documentation asset checksum mismatch: ' + asset.path)
+}
 
 const pkg = json('package.json'), lock = json('package-lock.json')
 if (pkg.name !== 'harness-docket' || lock.version !== pkg.version || lock.packages?.['']?.version !== pkg.version) fail('Package/lock identity mismatch')
@@ -97,7 +103,8 @@ if (process.argv.includes('--git')) {
   for (const rev of revisions) {
     const info = git(['show', '-s', '--format=%B%n%an <%ae>%n%cn <%ce>', rev])
     scan('commit metadata', info)
-    for (const email of git(['show', '-s', '--format=%ae%n%ce', rev]).toString().trim().split('\n')) if (!/^[a-zA-Z0-9+_.-]+@users\.noreply\.github\.com$/.test(email)) fail('Commit email is not a GitHub noreply address')
+    const emails = git(['show', '-s', '--format=%ae%n%ce', rev]).toString().trim().split('\n')
+    for (const [role, email] of emails.entries()) if (!/^[a-zA-Z0-9+_.-]+@users\.noreply\.github\.com$/.test(email) && !(role === 1 && email === 'noreply@github.com')) fail('Commit email is not a GitHub noreply address')
     for (const entry of git(['ls-tree', '-r', '-z', rev]).toString().split('\0').filter(Boolean)) {
       const match = /^(\d+) blob ([a-f0-9]+)\t(.+)$/.exec(entry)
       const knownPublishedRules = match?.[1] === '100644' && match[3] === 'AGENTS.md' && match[2] === publishedAgentRulesBlob && publishedAgentRulesCommits.has(rev)
