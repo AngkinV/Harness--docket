@@ -1,12 +1,15 @@
-<div align="center">
-
 <a id="top"></a>
 
-# Harness- docket
+<div align="center">
 
-**让人物陪伴工作，让会话拥有自己的开场。**
+<p>
+  <img src="./assets/pets/blue-maid/022.webp" alt="鲸鱼娘" width="180">
+</p>
 
-为 DeepSeek Harness Web 打造的人物伙伴、动作互动与会话片头插件。
+<h1>Harness- docket</h1>
+
+<p><strong>让人物陪伴工作，让会话拥有自己的开场。</strong></p>
+<p>DeepSeek Harness Web 插件 · 人物伙伴 · 动作互动 · 会话片头</p>
 
 <p>
   <a href="https://github.com/AngkinV/Harness--docket"><img alt="源码版本 0.9.1" src="https://img.shields.io/badge/version-0.9.1-2563EB?style=flat-square"></a>
@@ -16,20 +19,90 @@
   <a href="LICENSE"><img alt="代码许可 BSD-3-Clause" src="https://img.shields.io/badge/code_license-BSD--3--Clause-475569?style=flat-square"></a>
 </p>
 
-[快速安装](#install) · [功能介绍](#features) · [技术栈](#stack) · [开发指南](#develop) · [常见问题](#faq)
-
-简体中文 · [English](README.en.md) · [反馈问题](https://github.com/AngkinV/Harness--docket/issues)
+<p>
+  <a href="#install"><strong>快速安装</strong></a> ·
+  <a href="#usage">使用指南</a> ·
+  <a href="#features">功能介绍</a> ·
+  <a href="#stack">技术栈</a> ·
+  <a href="#faq">常见问题</a>
+</p>
+<p>
+  简体中文 · <a href="README.en.md">English</a> ·
+  <a href="https://github.com/AngkinV/Harness--docket/issues">反馈问题</a> ·
+  <a href="#license">作者与许可</a>
+</p>
 
 </div>
 
 ---
 
-Harness- docket 把可拖动、会行走的人物放进 Harness 页面。你可以为人物配置模型、动作、表情和贴纸，让它响应当前会话的工作状态；也可以上传自己的片头，为新会话设置开场画面。
+Harness- docket 把可拖动、会行走的人物放进 Harness 页面：为人物配置模型、动作、表情和贴纸，让它响应当前会话的工作状态；上传自己的视频，为新会话设置开场画面。
 
-**提问和任务继续在 Harness 主输入框完成。** 人物负责状态反馈与轻量互动，0.9.1 已移除独立人物聊天入口。页面默认只展示一个人物，打开角色管理时切换为管理预览。
+**提问和任务在 Harness 主输入框完成，人物负责状态反馈与轻量互动。** 页面默认只展示一个人物，打开角色管理时切换为管理预览。
 
 > [!NOTE]
 > 公开版附带基础人物「星芽」和可选透明动画角色。首次安装的片库与外部动作库为空；开发者的私人模型、FBX 样本及示例片头不随仓库分发。基础人物的行走与互动无需另外下载模型。
+
+<details>
+<summary><strong>文档导航</strong></summary>
+
+- [快速安装](#install) · [第一次使用](#usage)
+- [功能介绍](#features) · [支持的资源](#resources)
+- [技术栈与模块关系](#stack) · [数据与配置](#data)
+- [开发指南](#develop) · [常见问题](#faq) · [项目信息与许可](#license)
+
+</details>
+
+<a id="install"></a>
+
+## 快速安装
+
+### 环境要求
+
+| 项目 | 要求 |
+| :--- | :--- |
+| 运行环境 | 已安装并可正常启动的 DeepSeek Harness Web |
+| Harness 版本 | `0.1.7-rc.2` 或更高，具体兼容性以宿主检查为准 |
+| Node.js | 运行预编译插件需 `20+`；开发构建推荐 `24` |
+| Git | 通过 GitHub 仓库地址安装时需可用 |
+| 浏览器 | 3D 人物需要 WebGL；视频格式和语音能力取决于浏览器与系统 |
+
+### 方式一：在插件管理中添加
+
+1. 打开 Harness 的插件市场 / 插件管理，进入 **添加插件**。
+2. 粘贴下方 GitHub 仓库地址并安装。
+3. 按宿主提示重新加载；页面出现基础人物后，即可打开片库或角色管理。
+
+```text
+https://github.com/AngkinV/Harness--docket
+```
+
+### 方式二：使用命令行
+
+```sh
+dsh plugin --profile web add https://github.com/AngkinV/Harness--docket --ignore-scripts
+```
+
+仓库包含预编译 `lib/`、插件清单和界面资源。**使用者安装时无需构建插件，也无需安装插件的开发依赖。** 安装完成后重启正在运行的 Harness Web，或按宿主提示重新加载。
+
+> [!TIP]
+> 从旧 `dsh-boot-animation` 升级时，先确认新插件安装成功，再停用旧插件，避免重复挂载。通过仓库地址安装不等于已经收录到官方精选列表。
+
+<a id="usage"></a>
+
+## 第一次使用
+
+| 想做的事 | 操作 |
+| :--- | :--- |
+| 移动人物 | 用鼠标或手指拖动；聚焦人物后也可用方向键移动 |
+| 与人物互动 | 单击人物；拖动结束不会作为普通点击处理 |
+| 展开或收起菜单 | 右键、人物旁 **···**、菜单键或 `Shift + F10`；按 `Esc` 收起 |
+| 添加自己的模型 | **角色 → 上传模型 → 预览 → 使用此角色** |
+| 配置动作与贴纸 | 在角色管理中打开动作 / 互动设置，选择资源并保存 |
+| 设置会话片头 | **片库 → 上传视频 → 选择视频 → 预览**，再开启自动播放 |
+| 恢复删除的视频 | 打开片库回收站，在保留期内选择恢复 |
+| 调整播放提示朗读 | **角色 → 播放提示与声音** |
+| 提问或执行任务 | 使用 Harness 主输入框，人物跟随当前会话状态 |
 
 <a id="features"></a>
 
@@ -73,58 +146,9 @@ Harness- docket 把可拖动、会行走的人物放进 Harness 页面。你可�
 
 切换片头自动播放时，页面右上方显示固定短提示。在 **角色 → 播放提示与声音** 中可开启朗读、选择声音、调整音量和试听。朗读默认关闭；声音来源、可用性及是否离线取决于浏览器和系统提供的语音服务。
 
-<a id="install"></a>
+<a id="resources"></a>
 
-## 快速安装
-
-### 环境要求
-
-| 项目 | 要求 |
-| :--- | :--- |
-| 运行环境 | 已安装并可正常启动的 DeepSeek Harness Web |
-| Harness 版本 | `0.1.7-rc.2` 或更高，具体兼容性以宿主检查为准 |
-| Node.js | 运行预编译插件需 `20+`；开发构建推荐 `24` |
-| Git | 通过 GitHub 仓库地址安装时需可用 |
-| 浏览器 | 3D 人物需要 WebGL；视频格式和语音能力取决于浏览器与系统 |
-
-### 方式一：在插件管理中添加
-
-1. 打开 Harness 的插件市场 / 插件管理，选择 **添加插件**。
-2. 粘贴下方 GitHub 仓库地址并安装。
-3. 按宿主提示重新加载；页面出现基础人物后，即可打开片库或角色管理。
-
-```text
-https://github.com/AngkinV/Harness--docket
-```
-
-### 方式二：使用命令行
-
-```sh
-dsh plugin --profile web add https://github.com/AngkinV/Harness--docket --ignore-scripts
-```
-
-仓库包含预编译 `lib/`、插件清单和界面资源。**使用者安装时无需构建插件，也无需安装插件的开发依赖。** 安装完成后重启正在运行的 Harness Web，或按宿主提示重新加载。
-
-> [!TIP]
-> 从旧 `dsh-boot-animation` 升级时，先确认新插件安装成功，再停用旧插件，避免重复挂载。通过仓库地址安装不等于已经收录到官方精选列表。
-
-<a id="usage"></a>
-
-## 第一次使用
-
-| 想做的事 | 操作 |
-| :--- | :--- |
-| 移动人物 | 用鼠标或手指拖动；聚焦人物后也可用方向键移动 |
-| 与人物互动 | 单击人物；拖动结束不会作为普通点击处理 |
-| 展开或收起菜单 | 右键、人物旁 **···**、菜单键或 `Shift + F10`；按 `Esc` 收起 |
-| 添加自己的模型 | **角色 → 上传模型 → 预览 → 使用此角色** |
-| 配置动作与贴纸 | 在角色管理中打开动作 / 互动设置，选择资源并保存 |
-| 设置会话片头 | **片库 → 上传视频 → 选择视频 → 预览**，再开启自动播放 |
-| 恢复删除的视频 | 打开片库回收站，在保留期内选择恢复 |
-| 调整播放提示朗读 | **角色 → 播放提示与声音** |
-| 提问或执行任务 | 使用 Harness 主输入框，人物跟随当前会话状态 |
-
-### 支持的资源
+## 支持的资源
 
 | 资源 | 格式 | 单文件上限 | 说明 |
 | :--- | :--- | :--- | :--- |
@@ -157,13 +181,14 @@ dsh plugin --profile web add https://github.com/AngkinV/Harness--docket --ignore
 
 ```mermaid
 flowchart LR
-    Session[Harness 当前会话] --> State[会话状态适配]
-    State --> Companion[人物行为与交互]
-    Companion --> Visual[3D 渲染 / 透明视频]
-    Panels[片库与角色管理] --> Host[插件 HTTP 服务]
-    Host --> Storage[(Harness 数据目录)]
-    Host --> Panels
-    Panels --> Companion
+    Session["Harness 当前会话"] --> State["会话状态适配"]
+    subgraph Client["浏览器界面"]
+        State --> Companion["人物行为与交互"]
+        Companion --> Visual["3D 渲染 / 透明视频"]
+        Panels["片库与角色管理"] --> Companion
+    end
+    Panels <-->|"上传与配置"| Host["插件 HTTP 服务"]
+    Host --> Storage[("Harness 数据目录")]
 ```
 
 客户端负责界面与人物呈现，宿主侧负责资源和配置。Three.js / VRM 渲染代码随插件打包，角色、动作和媒体按需加载；会话状态只驱动人物反馈。
@@ -313,7 +338,13 @@ npm pack --ignore-scripts --pack-destination ..
 | 来源与第三方说明 | [NOTICE.md](NOTICE.md)、[渲染依赖许可](lib/third-party-licenses.txt) |
 | 构建检查 | [GitHub Actions](https://github.com/AngkinV/Harness--docket/actions) |
 
-代码派生自 [NativeDog1/dsh-boot-animation](https://github.com/NativeDog1/dsh-boot-animation)，保留原版权和许可。3D 渲染使用 [Three.js](https://threejs.org/) 与 [three-vrm](https://github.com/pixiv/three-vrm)。本项目为社区插件，不代表上游作者或 DeepSeek 官方背书。
+### 致谢
+
+- [NativeDog1/dsh-boot-animation](https://github.com/NativeDog1/dsh-boot-animation)：项目代码来源，保留原版权和许可。
+- [PC2005-cloud/dsh-pet](https://github.com/PC2005-cloud/dsh-pet)：透明角色动画素材。
+- [Three.js](https://threejs.org/) 与 [three-vrm](https://github.com/pixiv/three-vrm)：3D 渲染与 VRM 支持。
+
+本项目为社区插件，不代表上游作者或 DeepSeek 官方背书。
 
 > [!IMPORTANT]
 > 「蓝毛小女仆」动画来自 [PC2005-cloud/dsh-pet](https://github.com/PC2005-cloud/dsh-pet)，**素材仅限非商用**，介绍、展示及分发须保留原作者 GitHub 地址。素材条款独立于代码的 BSD-3-Clause 许可，不能将代码许可理解为全部素材可商用。
