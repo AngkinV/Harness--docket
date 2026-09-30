@@ -16,8 +16,19 @@ const allowed = new Set(policy.files)
 // Keep explicitly reviewed retired public paths for history checks only; they
 // are never allowed back into the current tree or installation package.
 const historical = new Set([...allowed, ...(policy.retiredFiles || [])])
+// This generic rules file was already published before it was removed. Recognize
+// only its exact blob in these five existing commits; never permit it in the
+// current tree, the allowlists, or a new commit (even with identical contents).
+const publishedAgentRulesBlob = '7662d125d2fcbe8811e3124e5c30ab3f32c2354d'
+const publishedAgentRulesCommits = new Set([
+  'e29d0c4b583fb382013d97a518ddeaf64e8943e8',
+  'f390052a5624805d82cd0959185e417497647873',
+  '1b929766ddd266c6280216830a28fb7ceae73742',
+  'f17b6fa433271eaf4a9274ccd4f59d6622613073',
+  '05d2d3aaaf0d6347883c06bbae10b2499738c83b',
+])
 if (policy.schemaVersion !== 1 || allowed.size !== policy.files.length) fail('Invalid public allowlist')
-const privateName = /(?:^|\/)(?:AGENT\.md|\.env[^/]*|\.npmrc|\.pnpmrc|\.work|artifacts|models|reference|node_modules|\.git|\.codex|\.agents)(?:\/|$)|\.(?:vrm|glb|fbx|mp4|log|map|tgz|zip|db|sqlite\w*|pem|key|heapsnapshot)$/i
+const privateName = /(?:^|\/)(?:AGENTS?\.md|\.env[^/]*|\.npmrc|\.pnpmrc|\.work|artifacts|models|reference|node_modules|\.git|\.codex|\.agents)(?:\/|$)|\.(?:vrm|glb|fbx|mp4|log|map|tgz|zip|db|sqlite\w*|pem|key|heapsnapshot)$/i
 for (const file of historical) if (!file || file.startsWith('/') || file.split('/').some(p => !p || p === '.' || p === '..') || privateName.test(file)) fail('Unsafe allowlist entry: ' + file)
 
 const secrets = [
@@ -89,7 +100,8 @@ if (process.argv.includes('--git')) {
     for (const email of git(['show', '-s', '--format=%ae%n%ce', rev]).toString().trim().split('\n')) if (!/^[a-zA-Z0-9+_.-]+@users\.noreply\.github\.com$/.test(email)) fail('Commit email is not a GitHub noreply address')
     for (const entry of git(['ls-tree', '-r', '-z', rev]).toString().split('\0').filter(Boolean)) {
       const match = /^(\d+) blob ([a-f0-9]+)\t(.+)$/.exec(entry)
-      if (!match || match[1] !== '100644' && match[1] !== '100755' || !historical.has(match[3])) fail('Unreviewed path/type in Git history')
+      const knownPublishedRules = match?.[1] === '100644' && match[3] === 'AGENTS.md' && match[2] === publishedAgentRulesBlob && publishedAgentRulesCommits.has(rev)
+      if (!match || match[1] !== '100644' && match[1] !== '100755' || !historical.has(match[3]) && !knownPublishedRules) fail('Unreviewed path/type in Git history')
       if (!checked.has(match[2])) {
         if (Number(git(['cat-file', '-s', match[2]]).toString()) > 25 * MiB) fail('Oversized historical blob')
         scan('history: ' + match[3], git(['cat-file', 'blob', match[2]])); checked.add(match[2])

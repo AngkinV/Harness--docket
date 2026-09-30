@@ -7,7 +7,8 @@ artifacts/
 .npmrc
 .pnpmrc
 .DS_Store
-AGENT.md
+[Aa][Gg][Ee][Nn][Tt].[Mm][Dd]
+[Aa][Gg][Ee][Nn][Tt][Ss].[Mm][Dd]
 models/
 *.log
 *.tgz

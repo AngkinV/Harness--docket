@@ -4,7 +4,6 @@
     ".githooks/pre-push",
     ".github/workflows/release-check.yml",
     ".gitignore",
-    "AGENTS.md",
     "LICENSE",
     "NOTICE.md",
     "README.en.md",
