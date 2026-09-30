@@ -15,7 +15,7 @@ export function setAutoplay(enabled: boolean) {
   if (enabled === getPlaybackState().enabled) return
   const saved = writePreference(ENABLED, String(enabled))
   publish({ enabled })
-  say(!saved ? `本页已${enabled ? '开启' : '关闭'}，但这次没能记住设置。` : enabled ? getPlaybackState().selectionKnown && !getPlaybackState().selected ? '自动播放已开启，先去片库选一个片头吧。' : '自动播放已开启，下次进入新会话会播放片头。' : '自动播放已关闭，需要时可以去片库预览。')
+  say(!saved ? `本页已${enabled ? '开启' : '关闭'}，但这次没能记住设置。` : enabled ? getPlaybackState().selectionKnown && !getPlaybackState().selected ? '自动播放已开启，先去片库选一个片头吧。' : '自动播放已开启，下次启动页面或进入新会话会播放片头。' : '自动播放已关闭，需要时可以去片库预览。')
 }
 export function setPinned(id: string | null) { const saved = writePreference(PIN, id); publish({ pinned: id }); if (!saved) say('本页已更新重播规则，但这次没能记住设置。') }
 export function setPlayback(play: Play) { publish({ play }); if (play.phase === 'failed') say('这段片头没能播放，可以去片库重试。') }

@@ -1,7 +1,7 @@
 {
   "name": "harness-docket",
-  "version": "0.9.1",
-  "description": "Harness- docket — 页面行走、FBX 动作库与表情互动的 3D 伙伴。",
+  "version": "0.9.2",
+  "description": "Harness- docket — 启动片头、蓝毛小女仆与可切换的轻量 3D 伙伴。",
   "type": "module",
   "main": "./lib/index.js",
   "types": "./lib/types/index.d.ts",
@@ -13,7 +13,8 @@
     "LICENSE",
     "locale",
     "NOTICE.md",
-    "assets/pets"
+    "assets/pets",
+    "assets/models"
   ],
   "license": "BSD-3-Clause",
   "keywords": [

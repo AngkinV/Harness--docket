@@ -18,7 +18,8 @@ import { behaviorPriority, createDailyPicker } from './companion-behavior.js'
 
 type Item = { id: string; name: string; source: string; format: string; version: string; human: boolean; rigged: boolean; boneCount: number; bytes: number; animations?: number; author?: string; license?: string; sourceUrl?: string; clips?: Record<string, any> }
 type Catalog = { items: Item[]; activeId: string; errors: { name: string; error: string }[]; maxBytes: number }
-const DEFAULT: Item = { id: 'builtin:companion', name: '星芽', source: 'builtin', format: '内置 3D', version: '1', human: true, rigged: true, boneCount: 0, bytes: 0 }
+import { DEFAULT_CHARACTER } from './default-character.js'
+const DEFAULT: Item = DEFAULT_CHARACTER
 const SETTINGS = 'harness-docket:avatar-position:v1'
 let rendererModule: Promise<any> | null = null
 const renderer = () => rendererModule ??= import('/harness-docket/avatar-renderer.js?v=' + __HARNESS_DOCKET_VERSION__).catch(e => { rendererModule = null; throw e })
@@ -126,7 +127,7 @@ export function AvatarDock({ sessionId, isPinned, playerDisabled, playerTitle, o
   useEffect(() => { workSeconds.current = 0 }, [workKey])
   const [speaking, setSpeaking] = useState(false)
   const [retry, setRetry] = useState(0)
-  const [expanded, setExpandedState] = useState(false), [manager, setManager] = useState(false), [covered, setCovered] = useState(false)
+  const [expanded, setExpandedState] = useState(false), [manager, setManager] = useState(false), [covered, setCovered] = useState(!!(window as any).__HDK_STARTUP__?.active)
   const [position, setPosition] = useState(initialPosition), [viewport, setViewport] = useState({ left: 0, top: 0, width: window.innerWidth, height: window.innerHeight })
   const dock = useRef<HTMLElement>(null), trigger = useRef<HTMLButtonElement>(null), menu = useRef<HTMLDivElement>(null)
   const drag = useRef<{ id: number; x: number; y: number; left: number; top: number; moved: boolean } | null>(null), suppressClick = useRef(false)
@@ -152,13 +153,31 @@ export function AvatarDock({ sessionId, isPinned, playerDisabled, playerTitle, o
   pocketBusy.current = !!pocketFrame?.active
   const setExpanded = (value: boolean | ((previous: boolean) => boolean)) => { const next = typeof value === 'function' ? value(expanded) : value; if (next && !expanded) setPocketFrame(null); setExpandedState(next) }
   const arcRef = useRef<any>(null), arcKey = [selected.id, width, height, viewport.width, viewport.height, left, top].join(':')
-  const arcIdentity = useRef('')
-  if ((!expanded && !pocketFrame?.active) || !arcRef.current || arcIdentity.current !== arcKey || expanded && pocketFrame?.time > .44 && pocketFrame?.time < .65) {
+  const arcIdentity = useRef(''), arcWasOpen = useRef(false)
+  if (!arcRef.current || arcIdentity.current !== arcKey || expanded && !arcWasOpen.current) {
     arcRef.current = pocketMenuLayout({ measurement: measured, width: width - 40, height, origin: { x: left, y: top }, viewport, touch, side: profile.attachedMenu?.side })
     arcIdentity.current = arcKey
   }
+  arcWasOpen.current = expanded
   const arc = arcRef.current
-  useEffect(() => { if (expanded && (alpha || !renderReady)) setPocketFrame({ instant: true, time: 4 }) }, [expanded, alpha, renderReady])
+  useEffect(() => {
+    if (!expanded || (!alpha && renderReady)) return
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches || !renderReady) { setPocketFrame({ instant: true, time: 4 }); return }
+    const start = performance.now(), palm = { x: arc.center.x + arc.side * height * .10, y: arc.center.y }
+    let frame = 0, previous = 0
+    const tick = (now: number) => {
+      frame = 0
+      if (document.hidden) { frame = 0; return }
+      if (now - start >= 1180 || now - previous >= 1000 / 30) {
+        previous = now
+        setPocketFrame({ active: true, time: Math.min(1.18, (now - start) / 1000), palm, release: [palm, palm, palm] })
+      }
+      if (now - start < 1180) frame = requestAnimationFrame(tick)
+    }
+    const resume = () => { if (!document.hidden && !frame) frame = requestAnimationFrame(tick) }
+    frame = requestAnimationFrame(tick); document.addEventListener('visibilitychange', resume)
+    return () => { cancelAnimationFrame(frame); document.removeEventListener('visibilitychange', resume); setPocketFrame(null) }
+  }, [expanded, alpha, renderReady])
   const bodyHit = (event: React.PointerEvent | React.MouseEvent) => !measured?.mask || overlapsMask(measured.mask, { x: event.clientX - (dock.current?.getBoundingClientRect().left || left), y: event.clientY - (dock.current?.getBoundingClientRect().top || top), width: 1, height: 1 }, 2)
   const load = useCallback(async () => { const data = await request('avatars.json'); setCatalog(data); setFailure(''); return data as Catalog }, [])
   useEffect(() => {
@@ -329,6 +348,10 @@ function AvatarManager({ voice, companion, reloadCompanion, catalog, reload, onC
     await request('avatars/select', { id: item.id, version: item.version }); await reload(); setNotice('已更换为「' + item.name + '」')
   })
   const remove = () => perform(async () => { await request('avatars/delete', { id: item.id }); const next = await reload(); choose(next.activeId); setNotice('已删除上传的角色') })
+  const restoreDefault = () => perform(async () => {
+    if (!items.some(model => model.id === DEFAULT.id)) { await request('avatars/restore-animation', {}); await reload() }
+    choose(DEFAULT.id)
+  })
   return <div className="hda-veil hdk-ui" onPointerDown={event => { if (event.target === event.currentTarget) askClose() }}>
     <div className="hda-dialog" ref={dialog} role="dialog" aria-modal="true" aria-labelledby="hda-title" tabIndex={-1}>
       <header className="hda-header"><div><h2 id="hda-title">角色管理</h2><p className="hdk-identity">Harness- docket · 插件</p></div><button className="hda-icon-button" onClick={askClose} aria-label="关闭角色管理"><Icon kind="close"/></button></header>
@@ -373,7 +396,7 @@ function AvatarManager({ voice, companion, reloadCompanion, catalog, reload, onC
       {closing && <div className="hda-unsaved" role="alert"><span>角色设置尚未保存。</span><button className="hda-secondary" onClick={() => setClosing(false)}>继续编辑</button><button className="hda-danger" onClick={onClose}>放弃修改并关闭</button></div>}
       <footer className="hda-footer">
         <div className="hda-feedback" role="status">{error ? <span className="hda-error">{error}</span> : notice || (tab === 'model' ? '选择角色预览，点击“使用此角色”应用。' : settingsDirty ? '有未保存的设置' : '设置保存后生效。')}</div>
-        <div className="hda-footer-actions" hidden={tab !== 'model'}><button className="hda-secondary" disabled={busy} onClick={() => choose(DEFAULT.id)}>恢复内置角色</button>{['uploaded', 'animation'].includes(item.source) && (confirmDelete ? <button className="hda-danger" disabled={busy} onClick={() => void remove()}>确认删除</button> : <button className="hda-danger" disabled={busy} onClick={() => setConfirmDelete(true)}><Icon kind="trash"/>删除</button>)}<button className={settingsDirty ? "hda-secondary" : "hda-primary"} disabled={busy || ready !== keyOf(item) || catalog?.activeId === item.id} onClick={() => void use()}><Icon kind="check"/>{catalog?.activeId === item.id ? '正在使用' : '使用此角色'}</button></div>
+        <div className="hda-footer-actions" hidden={tab !== 'model'}><button className="hda-secondary" disabled={busy} onClick={() => void restoreDefault()}>恢复默认角色</button>{['uploaded', 'animation'].includes(item.source) && (confirmDelete ? <button className="hda-danger" disabled={busy} onClick={() => void remove()}>确认删除</button> : <button className="hda-danger" disabled={busy} onClick={() => setConfirmDelete(true)}><Icon kind="trash"/>删除</button>)}<button className={settingsDirty ? "hda-secondary" : "hda-primary"} disabled={busy || ready !== keyOf(item) || catalog?.activeId === item.id} onClick={() => void use()}><Icon kind="check"/>{catalog?.activeId === item.id ? '正在使用' : '使用此角色'}</button></div>
         {(tab !== 'model' || settingsDirty) && <button type="submit" form="hda-companion-settings" className="hda-primary" disabled={!settingsDirty || settingsBusy}>{settingsBusy ? '正在保存…' : tab === 'model' ? '保存贴身菜单设置' : '保存动作与互动设置'}</button>}
       </footer>
     </div>

@@ -2,11 +2,11 @@ import { overlapsMask } from './attached-menu-layout.js'
 
 export const clamp = (x, a, b) => Math.max(a, Math.min(b, x))
 export const ease = x => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x) }
-export const SETTLE = .44, CYCLE = .86, RELEASE = .52
-export const DURATION = SETTLE + 3 * CYCLE
+export const SETTLE = .08, CYCLE = .08, RELEASE = .50
+export const DURATION = 1.18
 export function pocketPhase(time) {
-  const cycle = Math.max(0, time - SETTLE)
-  return { index: Math.min(2, Math.floor(cycle / CYCLE)), local: cycle % CYCLE, settled: time >= SETTLE, done: time >= DURATION }
+  const cycle = Math.max(0, time - SETTLE - RELEASE)
+  return { index: Math.min(2, Math.floor(cycle / CYCLE)), local: Math.max(0, time - SETTLE), settled: time >= SETTLE, done: time >= DURATION }
 }
 
 // All three centers share a circle and equal angular spacing. Rotate the

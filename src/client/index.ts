@@ -1,3 +1,4 @@
+import { captureThumbnail } from './video-thumbnail.js'
 import { ensureUIStyle, UIIcon as LibraryIcon, useDialogFocus, tabKeys, useTransientNotice } from './ui'
 /**
  * harness-docket - browser half.
@@ -88,9 +89,12 @@ function formatArgs(args: unknown[]): string {
     })
     .join(' ')
 }
+let diagnosticLines = 0
 function narrate(text: string): void {
+  if (diagnosticLines >= 20) return
+  diagnosticLines++
   try {
-    console.log('[Harness- docket] ' + text)
+    console.log('[Harness- docket] ' + text.slice(0, 2048))
   } catch {
     /* console unavailable */
   }
@@ -100,14 +104,7 @@ function log(...args: unknown[]): void {
   narrate(formatArgs(args))
 }
 
-/**
- * The always-on subset. A black overlay reports nothing by itself — no network
- * error, no thrown exception, just a video element that never paints — so the
- * four things needed to diagnose one from the outside are logged unconditionally:
- * which URL the element actually used, when the first frame arrived, when the
- * element errored and with which code, and when the stall watchdog gave up.
- * They are one line each and only fire on a play, so the noise is bounded.
- */
+// Failure diagnostics are capped at 20 lines per page; routine playback is debug-only.
 function notify(...args: unknown[]): void {
   narrate(formatArgs(args))
 }
@@ -327,12 +324,26 @@ function BootOverlay({
   const controller = useRef(new PlaybackController()), entry = useRef(new SessionEntry())
   const playbackSession = useRef<string | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const startup = (window as any).__HDK_STARTUP__
+  const startupEntry = useRef(!!startup?.attempted)
+  const startupSession = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!startup?.attempted) return
+    const sync = () => {
+      if (startup.phase === 'completed' && startupSession.current) markPlayed(startupSession.current)
+      setPlayback({ phase: startup.phase, playId: -1, source: 'auto' })
+      window.dispatchEvent(new CustomEvent('harness-docket:playback', { detail: startup.active }))
+    }
+    sync(); window.addEventListener('harness-docket:startup', sync)
+    return () => { window.removeEventListener('harness-docket:startup', sync); startup.close('left') }
+  }, [])
 
   const close = useCallback((state = 'skipped', expected?: number) => {
     if (expected !== undefined && controller.current.generation !== expected) return
     const activePlay = getPlaybackState().play
     setPlayback({ ...activePlay, phase: state as any })
-    notify('playback ' + state)
+    if (state === 'failed') notify('playback failed'); else log('playback ' + state)
     if (state === 'completed' && source.current === 'auto' && playbackSession.current) markPlayed(playbackSession.current)
     controller.current.cancel()
     setShowing(false)
@@ -348,7 +359,7 @@ function BootOverlay({
 
   const open = useCallback((id: string | null = null) => {
     setShowing(false)
-    notify('playback attempted')
+    log('playback attempted')
     source.current = id === null ? 'preview' : 'auto'
     const pending = controller.current.open(id)
     const generation = controller.current.generation, origin = source.current
@@ -361,14 +372,19 @@ function BootOverlay({
   }, [])
   useEffect(() => () => controller.current.cancel(), [])
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent('harness-docket:playback', { detail: showing }))
+    window.dispatchEvent(new CustomEvent('harness-docket:playback', { detail: showing || !!startup?.active }))
     return () => { window.dispatchEvent(new CustomEvent('harness-docket:playback', { detail: false })) }
   }, [showing])
   useEffect(() => {
+    if (startupEntry.current) {
+      if (sessionId !== null) { startupSession.current = sessionId; if (startup?.phase === 'completed') markPlayed(sessionId); entry.current.update(sessionId, true, sessionId, false, true); startupEntry.current = false }
+      return
+    }
+    if (entry.current.id !== sessionId && startup?.active) startup.close('left')
     if (entry.current.id !== sessionId) close('left')
     if (entry.current.update(sessionId, isNewConversation, getPlaybackState().pinned, sessionId ? hasPlayed(sessionId) : false, playback.enabled)) open(sessionId)
   }, [sessionId, isNewConversation, open, close, playback.enabled])
-  useEffect(() => { if (!playback.enabled && source.current === 'auto' && (controller.current.pending || showing)) close('disabled') }, [playback.enabled, showing, close])
+  useEffect(() => { if (!playback.enabled) { startup?.close('disabled'); if (source.current === 'auto' && (controller.current.pending || showing)) close('disabled') } }, [playback.enabled, showing, close])
 
   // An explicit preview from the library. This exists because the normal trigger
   // is deliberately narrow — a NEW conversation plays once, and only a PINNED one
@@ -393,8 +409,8 @@ function BootOverlay({
     let lastProgressAt = openedAt
     let lastTime = video.currentTime
     /** One line that carries everything a black-frame report needs. */
-    const report = (label: string): void =>
-      notify(label, {
+    const report = (label: string, writer = notify): void =>
+      writer(label, {
         ms: Math.round(performance.now() - openedAt),
         readyState: video.readyState,
         networkState: video.networkState,
@@ -402,7 +418,7 @@ function BootOverlay({
       })
     const onPlaying = (): void => {
       if (!active) return
-      advancePlayback(playId, 'playing'); report('playback started')
+      advancePlayback(playId, 'playing'); report('playback started', log)
     }
     const onWaiting = () => { if (active) advancePlayback(playId, 'buffering') }
     video.addEventListener('waiting', onWaiting)
@@ -431,6 +447,7 @@ function BootOverlay({
       video.removeEventListener('playing', onPlaying)
       video.removeEventListener('waiting', onWaiting)
       window.clearInterval(guard)
+      video.pause(); video.removeAttribute('src'); video.load()
     }
   }, [showing, src, playId, close])
 
@@ -546,43 +563,33 @@ type TrashItem = { id: string; name: string; bytes: number; deletedAt: number; e
 /** Load a still only when its card approaches the viewport; never autoplay the library. */
 function VideoThumbnail({ video }: { video: VideoInfo }): ReactElement {
   const frame = useRef<HTMLSpanElement | null>(null)
-  const media = useRef<HTMLVideoElement | null>(null)
-  const [visible, setVisible] = useState(false)
-  const [ready, setReady] = useState(false)
-  const [failed, setFailed] = useState(false)
-  const [duration, setDuration] = useState('')
+  const [visible, setVisible] = useState(false), [poster, setPoster] = useState('')
+  const [failed, setFailed] = useState(false), [duration, setDuration] = useState('')
   useEffect(() => {
     const element = frame.current
     if (!element) return
     if (typeof IntersectionObserver === 'undefined') { setVisible(true); return }
-    const observer = new IntersectionObserver(entries => {
-      if (entries.some(entry => entry.isIntersecting)) { setVisible(true); observer.disconnect() }
-    }, { root: element.closest('.dba-content'), rootMargin: '100px' })
+    const observer = new IntersectionObserver(entries => setVisible(entries.some(entry => entry.isIntersecting)), { root: element.closest('.dba-content'), rootMargin: '100px' })
     observer.observe(element)
     return () => observer.disconnect()
   }, [])
   useEffect(() => {
+    setPoster(''); setFailed(false)
     if (!visible) return
-    const element = media.current
-    return () => { if (element) { element.removeAttribute('src'); element.load() } }
-  }, [visible])
-  const src = '/harness-docket/media/' + encodeURIComponent(video.id) + (video.version ? '?v=' + encodeURIComponent(video.version) : '')
-  return h('span', { ref: frame, className: 'dba-thumb' + (ready ? ' dba-thumb-ready' : ''), 'aria-hidden': true },
-    visible ? h('video', { ref: media, src, muted: true, playsInline: true, preload: 'metadata', tabIndex: -1,
-      onLoadedMetadata: (event: { currentTarget: HTMLVideoElement }) => {
-        const element = event.currentTarget
-        if (Number.isFinite(element.duration) && element.duration > 0) {
-          const seconds = Math.floor(element.duration)
-          setDuration(Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0'))
-          element.currentTime = Math.min(2, element.duration * .18)
-        }
-      },
-      onSeeked: () => setReady(true),
-      onError: () => { setFailed(true); setReady(false) },
-    }) : null,
-    ready ? null : h('span', { className: 'dba-thumb-fallback' }, h(LibraryIcon, { kind: 'film' }), failed ? '暂无封面' : '正在读取封面'),
+    const abort = new AbortController()
+    const src = '/harness-docket/media/' + encodeURIComponent(video.id) + (video.version ? '?v=' + encodeURIComponent(video.version) : '')
+    void captureThumbnail(src, abort.signal).then((result: any) => {
+      if (abort.signal.aborted) return
+      setPoster(result.url)
+      if (Number.isFinite(result.duration)) { const seconds = Math.floor(result.duration); setDuration(Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0')) }
+    }).catch(error => { if (!abort.signal.aborted) setFailed(true) })
+    return () => abort.abort()
+  }, [visible, video.id, video.version])
+  return h('span', { ref: frame, className: 'dba-thumb' + (poster ? ' dba-thumb-ready' : ''), 'aria-hidden': true },
+    poster ? h('img', { src: poster, alt: '', width: 320, height: 180, style: { width: '100%', height: '100%', objectFit: 'cover' } }) : h('span', { className: 'dba-thumb-fallback' }, h(LibraryIcon, { kind: 'film' }), failed ? '暂无封面' : '正在读取封面'),
     duration ? h('span', { className: 'dba-duration' }, duration) : null)
 }
+
 async function requestJson<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, { cache: 'no-store', ...options })
   const data = await response.json()
@@ -651,7 +658,7 @@ function VideoLibrary({ onClose, onPreview, sessionId }: { onClose: () => void; 
     if (!(state?.accepts ?? ['.mp4', '.m4v', '.mov', '.webm', '.mkv']).includes(ext)) throw new Error('请选择 MP4、M4V、MOV、WebM 或 MKV 视频')
     setProgress(0)
     try {
-      const result = await new Promise<{ name: string }>((resolve, reject) => {
+      const result = await new Promise<{ name: string; video: VideoInfo; active: VideoInfo | null }>((resolve, reject) => {
         const xhr = new XMLHttpRequest(); uploadRequest.current = xhr
         xhr.open('POST', UPLOAD_URL + '?filename=' + encodeURIComponent(file.name))
         xhr.setRequestHeader('content-type', file.type || 'application/octet-stream')
@@ -661,10 +668,19 @@ function VideoLibrary({ onClose, onPreview, sessionId }: { onClose: () => void; 
           catch { reject(new Error('上传失败，请重新登录或稍后重试')) }
         }
         xhr.onerror = () => reject(new Error('网络中断，视频未上传完成'))
+        xhr.timeout = 300000
+        xhr.ontimeout = () => reject(new Error('上传超时，请重试'))
         xhr.onabort = () => reject(new Error('已取消上传'))
         xhr.send(file)
       })
-      await load(); setTab('library')
+      if (state) {
+        const duplicate = state.videos.find(v => v.version === result.video.version)
+        const videos = duplicate ? state.videos.map(v => v === duplicate ? { ...v, copies: (v.copies || 1) + 1 } : v) : [...state.videos, result.video]
+        if (result.active && !videos.some(v => v.id === result.active!.id)) videos.push(result.active)
+        const next = { ...state, videos, activeId: result.active?.id ?? null, activeVersion: result.active?.version ?? null }
+        setState(next); selectedFromList(next)
+      }
+      setTab('library')
       setMsg({ text: '已上传「' + result.name + '」。点击视频即可切换为片头。', kind: 'dba-ok' })
     } finally { uploadRequest.current = null; setProgress(null) }
   })
@@ -682,7 +698,7 @@ function VideoLibrary({ onClose, onPreview, sessionId }: { onClose: () => void; 
         h('label', null, h('input', { type: 'checkbox', checked: playback.enabled, onChange: (e: any) => setAutoplay(e.target.checked) }), '片头自动播放：' + (playback.enabled ? '开' : '关')),
         h('label', null, h('input', { type: 'checkbox', disabled: !sessionId, checked: !!sessionId && playback.pinned === sessionId, onChange: (e: any) => setPinned(e.target.checked ? sessionId : null) }), '当前会话每次进入重播'),
         h('span', { role: 'status', className: 'dba-playback-status' }, playbackDescription(playback)),
-        h('small', null, playback.enabled ? '新会话播放一次；手动预览独立可用。' : '所有自动片头已关闭，手动预览仍可使用。')),
+        h('small', null, playback.enabled ? '页面启动时播放，新会话播放一次；手动预览独立可用。' : '所有自动片头已关闭，手动预览仍可使用。')),
       h('div', { className: 'dba-toolbar' },
         h('div', { className: 'dba-tabs', role: 'tablist', 'aria-label': '片库视图', onKeyDown: tabKeys },
           h('button', { type: 'button', className: 'dba-btn' + (tab === 'library' ? ' dba-btn-on' : ''), disabled: busy, role: 'tab', id: 'dba-tab-library', 'aria-controls': 'dba-library-panel', tabIndex: tab === 'library' ? 0 : -1, 'aria-selected': tab === 'library', 'aria-pressed': tab === 'library', onClick: () => setTab('library') },
@@ -749,6 +765,8 @@ type ClientContext = {
 }
 
 export function apply(ctx: ClientContext): void {
+  const startup = (window as any).__HDK_STARTUP__
+  if (startup?.namespace) configurePreferences(startup.namespace)
   const candidate = ctx.uiSession?.adapter?.current
   const store =
     candidate !== undefined &&
@@ -764,8 +782,9 @@ export function apply(ctx: ClientContext): void {
   const AppRoot = () => {
     const owned = useSingleCompanion()
     const { sessionId } = useCurrentSession(store)
-    const [ready, setReady] = useState(false)
+    const [ready, setReady] = useState(!!startup?.namespace)
     useEffect(() => {
+      if (startup?.namespace) return
       const abort = new AbortController(), timeout = setTimeout(() => abort.abort(), 8000)
       fetch('/harness-docket/client-config.json', { cache: 'no-store', signal: abort.signal }).then(r => { if (!r.ok) throw new Error('读取配置失败'); return r.json() }).then(data => { if (typeof data.namespace === 'string') configurePreferences(data.namespace) }).catch(() => {}).finally(() => { clearTimeout(timeout); setReady(true) })
       return () => { clearTimeout(timeout); abort.abort() }

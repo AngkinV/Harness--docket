@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import { randomUUID, createHash } from 'node:crypto'
 import { createWriteStream, constants } from 'node:fs'
 import { mkdir, lstat, readdir, writeFile, rename, unlink, open } from 'node:fs/promises'
@@ -10,10 +11,10 @@ import { schema, drainDeletes, reconcileResources } from './resource-state.js'
 import { inspectResource, withUploadSlot } from './resource-inspector.js'
 
 export { AvatarError, MAX_MODEL_BYTES }
-const FALLBACK = { id: 'builtin:companion', name: '星芽', format: '内置 3D', human: true, rigged: true, boneCount: 0, bytes: 0, version: '1', source: 'builtin' }
+const DEFAULT_ID = 'alpha:blue-maid'
 const exists = async path => { try { return await lstat(path) } catch (e) { if (e.code === 'ENOENT') return null; throw e } }
 
-export function createAvatarStore(homeDir, localDir, animationItems = []) {
+export function createAvatarStore(homeDir, localDir, animationItems = [], packagedDir = new URL('../assets/models/', import.meta.url)) {
   const cache = new Map()
   const root = () => join(resolve(homeDir()), 'harness-docket', 'avatars')
   const exclusive = async fn => { await directory(); return withStoreLock(root(), fn) }
@@ -46,6 +47,11 @@ export function createAvatarStore(homeDir, localDir, animationItems = []) {
   }
   async function catalog() {
     const data = await state(), items = [], errors = [], paths = new Map()
+    const robotPath = fileURLToPath(new URL('robot.glb', packagedDir))
+    try {
+      const info = await inspect(robotPath), id = 'packaged:robot'
+      items.push({ ...info, id, name: data.names?.[id] || '小机器人', source: 'packaged' }); paths.set(id, robotPath)
+    } catch (error) { errors.push({ name: '小机器人', error: '无法读取附带模型' }) }
     const local = resolve(localDir())
     const stat = await exists(local)
     if (stat) {
@@ -62,8 +68,8 @@ export function createAvatarStore(homeDir, localDir, animationItems = []) {
       try { const path = join(root(), item.file), info = await inspect(path); items.push({ ...info, id: item.id, name: item.name, source: 'uploaded' }); paths.set(item.id, path) }
       catch (error) { errors.push({ name: item.name, error: error instanceof AvatarError ? error.message : '无法读取已上传模型' }) }
     }
-    items.push(FALLBACK, ...animationItems.filter(item => !data.hiddenAnimations?.includes(item.id)).map(item => ({ ...item, name: data.names?.[item.id] || item.name })))
-    return { data, paths, items, errors, activeId: items.some(i => i.id === data.activeId) ? data.activeId : items[0].id, maxBytes: MAX_MODEL_BYTES }
+    items.unshift(...animationItems.filter(item => !data.hiddenAnimations?.includes(item.id)).map(item => ({ ...item, name: data.names?.[item.id] || item.name })))
+    return { data, paths, items, errors, activeId: items.some(i => i.id === data.activeId) ? data.activeId : items[0]?.id ?? null, maxBytes: MAX_MODEL_BYTES }
   }
   async function list() { return exclusive(async () => {
     const { items, errors, activeId, maxBytes, data } = await catalog()
@@ -73,7 +79,7 @@ export function createAvatarStore(homeDir, localDir, animationItems = []) {
     return { items, errors, activeId, maxBytes }
   }) }
   async function has(id) { return exclusive(async () => {
-    if (id === FALLBACK.id) return true
+    if (id === 'packaged:robot') return true
     const data = await state()
     if (animationItems.some(item => item.id === id) && !data.hiddenAnimations?.includes(id)) return true
     if (data.uploaded.some(item => item.id === id)) return true
@@ -106,13 +112,13 @@ export function createAvatarStore(homeDir, localDir, animationItems = []) {
     const data = await state()
     if (animationItems.some(item => item.id === id)) {
       data.hiddenAnimations = [...new Set([...(data.hiddenAnimations || []), id])]
-      if (data.activeId === id) data.activeId = FALLBACK.id
+      if (data.activeId === id) data.activeId = null
       await save(data); return { ok: true }
     }
     const item = data.uploaded.find(i => i.id === id)
     if (!item) throw new AvatarError(403, '只能删除已上传的角色；本地模型请在 models 目录管理')
     data.uploaded = data.uploaded.filter(i => i.id !== id)
-    if (data.activeId === id) data.activeId = FALLBACK.id
+    if (data.activeId === id) data.activeId = DEFAULT_ID
     const path = join(root(), item.file)
       let identity = {}
       try { const stat = await lstat(path); identity = { ino: stat.ino, dev: stat.dev, ctimeMs: stat.ctimeMs } } catch (e) { if (e.code !== 'ENOENT') throw e }

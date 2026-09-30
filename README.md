@@ -12,7 +12,7 @@
 <p>DeepSeek Harness Web 插件 · 人物伙伴 · 动作互动 · 会话片头</p>
 
 <p>
-  <a href="https://github.com/AngkinV/Harness--docket"><img alt="源码版本 0.9.1" src="https://img.shields.io/badge/version-0.9.1-2563EB?style=flat-square"></a>
+  <a href="https://github.com/AngkinV/Harness--docket"><img alt="源码版本 0.9.2" src="https://img.shields.io/badge/version-0.9.2-2563EB?style=flat-square"></a>
   <a href="https://github.com/deepseek-ai/deepseek-harness"><img alt="DeepSeek Harness Web" src="https://img.shields.io/badge/DeepSeek_Harness-Web-0F766E?style=flat-square"></a>
   <a href="https://nodejs.org/"><img alt="Node.js 20 或更高版本" src="https://img.shields.io/badge/Node.js-%E2%89%A520-417E38?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white"></a>
   <a href="https://www.typescriptlang.org/"><img alt="TypeScript 5.9" src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&amp;logo=typescript&amp;logoColor=white"></a>
@@ -41,7 +41,7 @@ Harness- docket 把可拖动、会行走的人物放进 Harness 页面：为人�
 **提问和任务在 Harness 主输入框完成，人物负责状态反馈与轻量互动。** 页面默认只展示一个人物，打开角色管理时切换为管理预览。
 
 > [!NOTE]
-> 公开版附带基础人物「星芽」和可选透明动画角色。首次安装的片库与外部动作库为空；开发者的私人模型、FBX 样本及示例片头不随仓库分发。基础人物的行走与互动无需另外下载模型。
+> 公开版默认使用「蓝毛小女仆」，并附带 CC0 轻量 3D「小机器人」。首次安装内置四条会话片头；外部动作库为空，开发者的私人模型和 FBX 样本不随仓库分发。片头来源与各自许可边界见 NOTICE.md。基础人物的行走与互动无需另外下载模型。
 
 <details>
 <summary><strong>文档导航</strong></summary>
@@ -121,7 +121,7 @@ dsh plugin --profile web add https://github.com/AngkinV/Harness--docket --ignore
 
 人物平时在页面内活动；点击触发互动，拖动改变位置。右键或点击人物旁的 **···**，展开三个入口：**片头自动播放 → 片库 → 角色**。
 
-对具有可控人形手臂的角色，菜单通过取物动作逐个展开，再排列为身旁的半圆。透明视频角色、不具备相应骨骼的模型，以及开启「减少动态效果」的场景，使用直接展开方式。
+对具有可控人形手臂的角色，菜单通过取物动作逐个展开，再排列为身旁的半圆。透明视频角色使用短动画展开；不具备相应骨骼的模型，以及开启「减少动态效果」的场景，直接显示最终菜单。
 
 模型采用先预览、再应用的流程。加载失败会保留当前角色；打开菜单、管理面板、拖动或切到后台时，会按相应状态暂停人物移动。
 
@@ -255,7 +255,7 @@ Harness--docket/
 │   └── client/           # React 界面、人物行为与渲染
 ├── lib/                  # 安装即用的预编译产物
 ├── assets/pets/          # 透明角色素材、来源和校验清单
-├── media/                # 片头构建清单，公开版默认空
+├── media/                # 四条片头构建输入与清单
 ├── motions/              # 动作构建清单，公开版默认空
 ├── locale/               # 中英文插件元数据
 ├── scripts/              # 构建与素材处理工具
@@ -281,7 +281,7 @@ npm pack --ignore-scripts --pack-destination ..
 
 ### 资源与发布约定
 
-默认 3D 绘制最高 30fps、DPR 不超过 1.5；内置人物安静待机采用较低频率，后台停止装饰绘制。资源变化需要同时检查内存、媒体 / GPU 生命周期与磁盘开销，不能仅以功能测试通过代替性能验收。
+默认 3D 绘制最高 30fps、DPR 不超过 1.5；静态 3D 安静待机采用较低频率，后台停止装饰绘制。资源变化需要同时检查内存、媒体 / GPU 生命周期与磁盘开销，不能仅以功能测试通过代替性能验收。
 
 这些是设计约束，**不代表所有设备均达到性能目标**。完整宿主的轻量 CPU 目标仍有已知未达项；大模型、预览及浏览器差异也会影响实际开销。修改与发布前请阅读 [资源预算](docs/resource-budget.md) 和 [发布与隐私规则](docs/public-release.md)。
 
@@ -290,16 +290,16 @@ npm pack --ignore-scripts --pack-destination ..
 ## 常见问题
 
 <details>
-<summary><strong>为什么安装后没有片头或 FBX 动作？</strong></summary>
+<summary><strong>内置哪些片头，为什么没有 FBX 动作？</strong></summary>
 
-公开版有意不附带开发者的样本。先在片库上传自己的视频；需要外部动作时，在角色管理中上传 FBX。基础人物自身的行走和互动可以直接使用。
+0.9.2 内置 DeepSeek 品牌片头、赛博朋克片头、数字角色苏醒、光影·动色。视频保持源文件清晰度，其中光影·动色为4K/60fps，解码开销取决于设备。其作者/许可未核实，不属于代码BSD许可，详见 NOTICE.md。需要其他视频或外部动作时，可自行上传。基础人物自身的行走和互动可以直接使用。
 
 </details>
 
 <details>
 <summary><strong>为什么人物没有独立聊天框？</strong></summary>
 
-0.9.1 使用 Harness 主输入框完成对话和任务，人物展示当前会话状态。独立人物聊天已移除；若仍看到该入口，请核对安装版本，并在更新后重新加载宿主与页面。
+0.9.2 使用 Harness 主输入框完成对话和任务，人物展示当前会话状态。独立人物聊天已移除；若仍看到该入口，请核对安装版本，并在更新后重新加载宿主与页面。
 
 </details>
 
@@ -331,7 +331,7 @@ npm pack --ignore-scripts --pack-destination ..
 | 项目 | 信息 |
 | :--- | :--- |
 | 显示名称 / 包名 | **Harness- docket** / `harness-docket` |
-| 本文对应源码版本 | `0.9.1`；实际安装版本以插件清单为准 |
+| 本文对应源码版本 | `0.9.2`；实际安装版本以插件清单为准 |
 | 维护者 | [AngkinV](https://github.com/AngkinV) |
 | 代码仓库 | [AngkinV/Harness--docket](https://github.com/AngkinV/Harness--docket) |
 | 代码许可 | [BSD-3-Clause](LICENSE) |
@@ -354,3 +354,5 @@ npm pack --ignore-scripts --pack-destination ..
 [返回顶部](#top)
 
 </div>
+
+0.9.2：自动播放开启时，页面启动即播放当前片头，早于宿主加载界面；上传复用流式校验结果，封面抽帧后释放解码器。默认使用蓝毛小女仆，附带 CC0 小机器人，移除旧内置星芽；三点菜单改为 1.18 秒的一次连贯取物。

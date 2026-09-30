@@ -2,7 +2,7 @@ import { schema } from './resource-state.js'
 import { withUploadSlot } from './resource-inspector.js'
 import { HttpError } from './http.js'
 import { atomicStateSync, withStoreLockSync, readStateSync } from './storage.js'
-import { randomUUID } from 'node:crypto'
+import { randomUUID, createHash } from 'node:crypto'
 import { createWriteStream, existsSync, lstatSync, mkdirSync, readFileSync, writeFileSync, renameSync, unlinkSync, linkSync, realpathSync } from 'node:fs'
 import { basename, dirname, extname, join, resolve } from 'node:path'
 import { Transform } from 'node:stream'
@@ -106,16 +106,18 @@ export function createLibraryStore(homeDir, now = Date.now) {
     const stem = basename(filename, extname(filename)).normalize('NFC').replace(/^[. ]+|[. ]+$/g, '').slice(0, 80)
     return (stem || 'video') + ext
   }
-  async function upload(req, filename) {
+  async function upload(req, filename, { beforeCommit } = {}) {
     filename = safeName(filename)
     if (Number(req.headers['content-length']) > MAX_UPLOAD_BYTES) throw new LibraryError(413, '视频不能超过 250 MB')
     directory(trash())
     const staging = join(trash(), randomUUID() + '.' + process.pid + '.upload')
     let bytes = 0, head = Buffer.alloc(0)
+    const hash = createHash('sha256')
     const limit = new Transform({ transform(chunk, _, done) {
       bytes += chunk.length
       if (bytes > MAX_UPLOAD_BYTES) return done(new LibraryError(413, '视频不能超过 250 MB'))
-      if (head.length < 32) head = Buffer.concat([head, chunk.subarray(0, 32 - head.length)])
+      if (head.length < 65536) head = Buffer.concat([head, chunk.subarray(0, 65536 - head.length)])
+      hash.update(chunk)
       done(null, chunk)
     } })
     const output = createWriteStream(staging, { flags: 'wx', mode: 0o600 })
@@ -130,9 +132,10 @@ export function createLibraryStore(homeDir, now = Date.now) {
       const ebml = head.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]))
       const mp4 = head.subarray(4, 8).toString() === 'ftyp'
       if (['.webm', '.mkv'].includes(extname(filename)) ? !ebml : !mp4) throw new LibraryError(415, '文件内容不是支持的视频格式')
+      await beforeCommit?.()
       const path = uniquePath(directory(join(home(), 'videos')), filename)
       linkSync(staging, path) // atomic, never overwrites an existing video
-      return { path, file: basename(path) }
+      return { path, file: basename(path), head, contentKey: hash.digest('hex').slice(0, 16) }
     } finally {
       req.unpipe(limit); req.off('aborted', abort); req.off('error', abort)
       if (!req.complete) req.resume()

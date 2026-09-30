@@ -12,7 +12,7 @@ if (existsSync(dest) && lstatSync(dest).isSymbolicLink()) throw new Error('Refus
 try {
   embedClips(stage); await buildClient(stage)
   for (const source of readdirSync(join(root, 'src')).filter(name => name.endsWith('.js') && name !== 'resource-worker.js')) copyFileSync(join(root, 'src', source), join(stage, source === 'host.js' ? 'index.js' : source))
-  await build({ entryPoints: [join(root, 'src/resource-worker.js')], outfile: join(stage, 'resource-worker.js'), bundle: true, format: 'esm', platform: 'node', target: 'node20', legalComments: 'eof' })
+  await build({ absWorkingDir: root, preserveSymlinks: true, entryPoints: [join(root, 'src/resource-worker.js')], outfile: join(stage, 'resource-worker.js'), bundle: true, format: 'esm', platform: 'node', target: 'node20', legalComments: 'eof' })
   mkdirSync(join(stage, 'types/client'), { recursive: true })
   copyFileSync(join(root, 'src/types/index.d.ts'), join(stage, 'types/index.d.ts'))
   copyFileSync(join(root, 'src/types/client.d.ts'), join(stage, 'types/client/index.d.ts'))

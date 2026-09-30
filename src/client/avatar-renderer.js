@@ -164,8 +164,7 @@ export function createAvatarView(host, { onError = () => {}, onTick = () => {}, 
     const token = ++sequence; motionSequence++; motionAbort?.abort()
     let model
     try {
-      if (item.source === 'builtin') model = companion()
-      else {
+      {
         const response = await fetch('/harness-docket/avatar-model?id=' + encodeURIComponent(item.id) + '&v=' + encodeURIComponent(item.version), { signal, cache: 'no-cache' })
         if (!response.ok) throw new Error('读取模型失败，请刷新后重试')
         const bytes = await response.arrayBuffer()
@@ -188,8 +187,18 @@ export function createAvatarView(host, { onError = () => {}, onTick = () => {}, 
           vrm.humanoid.resetNormalizedPose()
           setBone(vrm, 'leftUpperArm', 0, 0, 1.18); setBone(vrm, 'rightUpperArm', 0, 0, -1.18)
           vrm.update(0)
-        } else if (gltf.animations.length) { model.mixer = new THREE.AnimationMixer(root); model.mixer.clipAction(gltf.animations[0]).play() }
+        } else if (gltf.animations.length) { model.mixer = new THREE.AnimationMixer(root); model.mixer.clipAction(gltf.animations.find(clip => clip.name === 'Idle') || gltf.animations[0]).play() }
         root.traverse(object => { if (object.isMesh) object.frustumCulled = false })
+        if (item.id === 'packaged:robot') {
+          const names = { hips: 'Hips', head: 'Head', leftUpperArm: 'UpperArm.L', leftLowerArm: 'LowerArm.L', leftHand: 'Palm2.L', rightUpperArm: 'UpperArm.R', rightLowerArm: 'LowerArm.R', rightHand: 'Palm2.R' }
+          model.gestureBones = {}
+          root.traverse(node => {
+            const index = gltf.parser.associations.get(node)?.nodes
+            const name = gltf.parser.json.nodes[index]?.name
+            for (const [key, wanted] of Object.entries(names)) if (name === wanted && node.isBone) model.gestureBones[key] = node
+          })
+        }
+
       }
       if (disposed || token !== sequence || signal?.aborted) { disposeModel(model); return false }
       model.container ??= new THREE.Group(); model.container.add(model.root)
@@ -273,43 +282,3 @@ export function createAvatarView(host, { onError = () => {}, onTick = () => {}, 
 
 // Original code-built companion, available even when the user's local models
 // directory is absent. Rigid parts follow actual Bone nodes; no external asset.
-function companion() {
-  const root = new THREE.Group(), hips = new THREE.Bone(); root.add(hips)
-  const eyeParts = [], gestureBones = { hips }; hips.position.y = .77
-  const material = color => new THREE.MeshStandardMaterial({ color, roughness: .78 })
-  const skin = material(0xffd8c4), hair = material(0x40475f), coat = material(0xb2c9ff), dark = material(0x243149), white = material(0xfff4e9)
-  const part = (geometry, mat, parent, x, y, z) => { const mesh = new THREE.Mesh(geometry, mat); mesh.position.set(x, y, z); parent.add(mesh); return mesh }
-  part(new THREE.CapsuleGeometry(.23, .33, 6, 16), coat, hips, 0, 0, 0)
-  const head = new THREE.Bone(); head.position.y = .61; hips.add(head); gestureBones.head = head
-  part(new THREE.SphereGeometry(.38, 24, 16), skin, head, 0, 0, 0)
-  part(new THREE.SphereGeometry(.395, 24, 16, 0, Math.PI * 2, 0, Math.PI * .49), hair, head, 0, .055, -.025)
-  for (const side of [-1, 1]) {
-    const eye = new THREE.Group(); eye.position.set(side * .14, -.02, .28); head.add(eye); eyeParts.push(eye)
-    part(new THREE.SphereGeometry(.065, 12, 10), dark, eye, 0, 0, .057)
-    part(new THREE.SphereGeometry(.021, 10, 8), white, eye, -.012, .024, .112)
-    const prefix = side === 1 ? 'left' : 'right'
-    const arm = new THREE.Bone(); arm.name = prefix + 'UpperArm'; arm.position.set(side * .27, .21, 0); hips.add(arm)
-    const lower = new THREE.Bone(); lower.name = prefix + 'LowerArm'; lower.position.set(side * .03, -.19, 0); arm.add(lower)
-    const hand = new THREE.Bone(); hand.name = prefix + 'Hand'; hand.position.set(side * .025, -.18, 0); lower.add(hand)
-    part(new THREE.CapsuleGeometry(.083, .10, 5, 12), coat, arm, side * .015, -.10, 0)
-    part(new THREE.CapsuleGeometry(.073, .09, 5, 12), coat, lower, side * .012, -.08, 0)
-    part(new THREE.SphereGeometry(.086, 12, 10), skin, hand, 0, 0, 0)
-    for (const bone of [arm, lower, hand]) gestureBones[bone.name] = bone
-    const leg = new THREE.Bone(); leg.name = prefix + 'UpperLeg'; leg.position.set(side * .125, -.32, 0); hips.add(leg); gestureBones[leg.name] = leg
-    part(new THREE.CapsuleGeometry(.09, .23, 5, 12), dark, leg, 0, -.14, 0)
-    part(new THREE.SphereGeometry(.12, 12, 10), white, leg, 0, -.32, .055)
-  }
-  const pin = part(new THREE.OctahedronGeometry(.07), white, head, .28, .2, .27); pin.rotation.z = .25
-  const gestureRest = Object.values(gestureBones).map(node => ({ node, q: node.quaternion.clone(), p: node.position.clone() }))
-  return { root, eyeParts, gestureBones, gestureRest, animate(time, action, reduced) {
-    const stride = reduced ? 0 : Math.sin(time * 6.2)
-    head.rotation.set(0, action === 'head' ? .35 * (reduced ? 1 : Math.sin(time)) : .05 * Math.sin(time * .7) * !reduced, 0)
-    hips.rotation.z = .018 * Math.sin(time) * !reduced
-    for (const side of ['left', 'right']) {
-      const sign = side === 'left' ? 1 : -1, arm = root.getObjectByName(side + 'UpperArm'), leg = root.getObjectByName(side + 'UpperLeg')
-      arm.rotation.z = action === side || action === 'wave' && side === 'right' ? sign * (1.8 + .2 * Math.sin(time * 8) * !reduced) : 0
-      arm.rotation.x = action === 'walk' ? -.35 * stride * sign : 0
-      leg.rotation.x = action === 'walk' ? .4 * stride * sign : 0
-    }
-  } }
-}

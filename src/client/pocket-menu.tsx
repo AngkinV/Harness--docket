@@ -7,11 +7,11 @@ export function PocketMenu({ expanded, layout, frame, children, menuRef }: any) 
   const time = frame?.time || 0, instant = frame?.instant, closing = frame?.closing
   const entries = React.Children.toArray(children).map((child: any, i) => {
     const local = time - SETTLE - i * CYCLE, end = layout.points[i]
-    let visible = expanded && (instant || local >= .26), point = end, scale = 1, landed = instant || local >= CYCLE, reveal = instant ? 1 : ease((local - .26) / .075)
+    let visible = expanded && (instant || local >= RELEASE - .16), point = end, scale = 1, landed = instant || local >= RELEASE + .32, reveal = instant ? 1 : ease((local - RELEASE + .16) / .12)
     if (!instant && !landed) {
       const start = frame?.release?.[i] || frame?.palm || end
-      if (local <= RELEASE) { point = frame?.palm || end; scale = .08 + .34 * ease((local - .26) / .20) }
-      else { const progress = (local - RELEASE) / (CYCLE - RELEASE); point = tokenFlight(start, end, progress); scale = .42 + .58 * ease(progress) }
+      if (local <= RELEASE) { point = frame?.palm || end; scale = .08 + .34 * ease((local - RELEASE + .16) / .16) }
+      else { const progress = (local - RELEASE) / .32; point = tokenFlight(start, end, progress); scale = .42 + .58 * ease(progress) }
     }
     if (closing && previous.current[i]) { ({ visible, point, scale, landed, reveal } = previous.current[i]) }
     else previous.current[i] = { visible, point, scale, landed, reveal }

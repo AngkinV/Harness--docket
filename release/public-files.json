@@ -8,6 +8,9 @@
     "NOTICE.md",
     "README.en.md",
     "README.md",
+    "assets/models/NOTICE.md",
+    "assets/models/manifest.json",
+    "assets/models/robot.glb",
     "assets/pets/blue-maid/022.webp",
     "assets/pets/blue-maid/UPSTREAM-LICENSE",
     "assets/pets/blue-maid/click1.mov",
@@ -43,6 +46,7 @@
     "lib/clips.data.js",
     "lib/clips.meta.js",
     "lib/companion-store.js",
+    "lib/embedded-clips.js",
     "lib/fbx-validation.js",
     "lib/http.js",
     "lib/index.js",
@@ -54,6 +58,7 @@
     "lib/resource-inspector.js",
     "lib/resource-state.js",
     "lib/resource-worker.js",
+    "lib/startup.js",
     "lib/storage.js",
     "lib/third-party-licenses.txt",
     "lib/types/client/index.d.ts",
@@ -62,6 +67,10 @@
     "locale/en.json",
     "locale/zh-CN.json",
     "media/clips.json",
+    "media/deepseek-awakening-intro.mp4",
+    "media/deepseek-brand-intro.mp4",
+    "media/deepseek-cyberpunk-intro.mp4",
+    "media/light-color-intro.mp4",
     "motions/motions.json",
     "package-lock.json",
     "package.json",
@@ -89,6 +98,7 @@
     "src/client/companion-random.js",
     "src/client/companion-roam.js",
     "src/client/companion-speech.js",
+    "src/client/default-character.js",
     "src/client/expression-capabilities.js",
     "src/client/floating-avatar.tsx",
     "src/client/gaze-controller.js",
@@ -109,8 +119,10 @@
     "src/client/single-companion.ts",
     "src/client/ui.css",
     "src/client/ui.tsx",
+    "src/client/video-thumbnail.js",
     "src/client/work-status.ts",
     "src/companion-store.js",
+    "src/embedded-clips.js",
     "src/fbx-validation.js",
     "src/host.js",
     "src/http.js",
@@ -120,6 +132,7 @@
     "src/resource-inspector.js",
     "src/resource-state.js",
     "src/resource-worker.js",
+    "src/startup.js",
     "src/storage.js",
     "src/types/client.d.ts",
     "src/types/index.d.ts",
@@ -134,7 +147,8 @@
     "LICENSE",
     "locale",
     "NOTICE.md",
-    "assets/pets"
+    "assets/pets",
+    "assets/models"
   ],
   "retiredFiles": [
     "lib/companion-chat.js",
@@ -147,6 +161,46 @@
       "bytes": 47374,
       "sha256": "af7cdc879dfc6de3ee49b970b551d65ce643877a5a978cc5afa9b296fcd3d74d",
       "sourceUrl": "https://github.com/AngkinV/Harness--docket/blob/d21b19210067640759d621ea973aba40354753b1/assets/pets/blue-maid/022.webp"
+    }
+  ],
+  "bundledMedia": [
+    {
+      "id": "brand",
+      "file": "deepseek-brand-intro.mp4",
+      "name": "DeepSeek 品牌片头",
+      "bytes": 1308725,
+      "sha256": "b22de4810e195b50f5da760febca8352d9e2dbd7bbefe7c203cc294bd8203c72",
+      "source": "https://github.com/NativeDog1/dsh-boot-animation/blob/ce22befdc436ab59832dd8ef33da80e973db8d94/media/deepseek-brand-intro.mp4",
+      "license": "BSD-3-Clause (upstream README default-media statement)"
+    },
+    {
+      "id": "cyberpunk",
+      "file": "deepseek-cyberpunk-intro.mp4",
+      "name": "DeepSeek 赛博朋克片头",
+      "bytes": 1856280,
+      "sha256": "beabf5956e0b467e9f06f467b3f5b7a682abb6555c1b16aee1c27f7e5b334a58",
+      "source": "https://github.com/NativeDog1/dsh-boot-animation/blob/ce22befdc436ab59832dd8ef33da80e973db8d94/media/deepseek-cyberpunk-intro.mp4",
+      "license": "BSD-3-Clause (upstream README default-media statement)"
+    },
+    {
+      "id": "awakening",
+      "file": "deepseek-awakening-intro.mp4",
+      "name": "DeepSeek 数字角色苏醒",
+      "bytes": 2600325,
+      "sha256": "ff5afe0dabc16e09d5d1d4a349a551173a872f5c9850c0aab358ebaaf4b09712",
+      "source": "https://github.com/NativeDog1/dsh-boot-animation/blob/ce22befdc436ab59832dd8ef33da80e973db8d94/media/deepseek-awakening-intro.mp4",
+      "license": "BSD-3-Clause (upstream README default-media statement)"
+    },
+    {
+      "id": "lightcolor",
+      "file": "light-color-intro.mp4",
+      "name": "光影·动色",
+      "bytes": 20375525,
+      "sha256": "038fd081590569d7816277d64905f5ad01cbaa4aa82e86d5467731e4ffda28a3",
+      "source": "Maintainer-provided video; original filename label: 【哲风壁纸】光影-动漫美女-彩色.mp4; original SHA-256 fd809617a18643cd7a21fa358548ff55dc56600174e45b19e1158650d218be07; lossless faststart remux",
+      "license": "UNCONFIRMED",
+      "distributionBasis": "Explicit maintainer instruction to include this exact video in 0.9.2; not a copyright license or downstream rights grant",
+      "author": "Unverified; original filename label is not proof of authorship"
     }
   ]
 }

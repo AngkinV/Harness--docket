@@ -8,7 +8,7 @@
 
 不公开 `AGENT.md`、`AGENTS.md`（包括任意目录下的大小写变体）、开发需求/审查/清理记录、测试脚本与测试结果、截图、录像、日志、堆快照、浏览器目录、Harness profile/home、上传资源、会话、数据库、Cookie、令牌、密钥、环境文件、编辑器配置、node_modules、缓存，以及私人提交历史。即使文件已被 Git 跟踪或位于源码目录，也不能例外；通用版代理指令文件同样不得生成或分发。提交作者和邮件同样公开，使用经过确认的公开身份或 GitHub noreply 邮箱；GitHub 网页提交使用的提交者邮箱 `noreply@github.com` 可接受，作者仍须使用 GitHub 用户 noreply 邮箱。
 
-公开版默认不包含私人 VRM/GLB、八个本地 FBX 和示例片头。保持空 `media/clips.json` 和 `motions/motions.json`，构建生成空片头数据与动作清单。基础人物和上传功能继续保留。透明角色仅分发清单中具有来源及 SHA-256 的文件，保留许可与非商用标注。不可把个人样本藏入 base64、预编译 lib、压缩包或 Git LFS 后声称已排除。
+公开版默认不包含私人 VRM/GLB 和八个本地 FBX；保持空 `motions/motions.json`。0.9.2 按维护者要求准备内嵌四条指定片头，只能按 `release/public-files.json` 的 `bundledMedia` 精确记录生成片头清单，并核对来源、许可、大小与 SHA-256；许可标记 `UNCONFIRMED` 时默认禁止发布。维护者已在本轮再次明确要求发布全部四条：仅固定SHA的光影·动色按此明确指令例外纳入，保留 UNCONFIRMED 状态及来源未核实说明，不宣称获得作者许可，也不授予下游版权；不得将此例外用于任何其他视频。新增目录文件不自动入包。原始「光影-动色.mp4」保留本地，分发副本 `media/light-color-intro.mp4` 只移动 MP4 索引，不重编码，视频码流须与原件完全一致。安装包只携带内嵌数据，不重复携带原 MP4；公开源码保留白名单内构建输入。默认蓝毛小女仆和上传功能继续保留。仅额外允许 `assets/models/robot.glb` 中已审阅、校验值固定的 CC0 RobotExpressive 权重归一派生模型及其清单/许可；不放行其他私人模型。透明角色仅分发清单中具有来源及 SHA-256 的文件，保留许可与非商用标注。不可把个人样本藏入 base64、预编译 lib、压缩包或 Git LFS 后声称已排除。
 
 ## 本地开发仓库到公开目录
 
@@ -60,6 +60,6 @@ npm run check:public
 
 仓库根目录就是 npm 插件包，必须包含预编译 lib、cordis.patch.yml、locale、LICENSE 和 NOTICE。不添加 prepare / preinstall / install / postinstall / prepack 等安装生命周期脚本；用户安装时无需编译。开发依赖仅用于维护者构建，运行库随 lib 分发。package.json 的 files 为第二层包白名单，不能用它替代 Git 仓库检查。
 
-遵守 docs/resource-budget.md。公开目录内容不超过 50 MiB，安装包压缩不超过 40 MiB、解包不超过 50 MiB；单个媒体文件不超过 5 MiB。构建和检查串行，单文件读取，不并发复制整套依赖。每次测试独立 run-id，只清理自己生成且已结束、未占用的临时目录，保留最终交付和精简核对记录。
+遵守 docs/resource-budget.md。0.9.2 按维护者保留片头清晰度的要求，四条指定视频版本的公开目录上限为 100 MiB，安装包压缩 64 MiB、解包 80 MiB，`lib/clips.data.js` 上限 40 MiB。单个媒体仍以 5 MiB 为限，唯一例外是白名单固定 SHA-256 的 `media/light-color-intro.mp4`（20,375,525 字节，4K/60fps 无损索引重排）。体积例外不放宽来源、许可、隐私检查或运行资源验收，不构成其他视频自动放行。构建和检查串行，单文件读取，不并发复制整套依赖。每次测试独立 run-id，只清理自己生成且已结束、未占用的临时目录，保留最终交付和精简核对记录。
 
 在开发工作区的 AGENT.md 记录导出清单、SHA-256、安装验证、资源前后值、清理结果及未完成事项；这些记录不得复制进公开仓库。只有发布说明及不含个人信息的使用文档可以公开。

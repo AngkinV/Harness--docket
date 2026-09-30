@@ -30,7 +30,22 @@ const publishedAgentRulesCommits = new Set([
 ])
 if (policy.schemaVersion !== 1 || allowed.size !== policy.files.length) fail('Invalid public allowlist')
 const privateName = /(?:^|\/)(?:AGENTS?\.md|\.env[^/]*|\.npmrc|\.pnpmrc|\.work|artifacts|models|reference|node_modules|\.git|\.codex|\.agents)(?:\/|$)|\.(?:vrm|glb|fbx|mp4|log|map|tgz|zip|db|sqlite\w*|pem|key|heapsnapshot)$/i
-for (const file of historical) if (!file || file.startsWith('/') || file.split('/').some(p => !p || p === '.' || p === '..') || privateName.test(file)) fail('Unsafe allowlist entry: ' + file)
+// Exactly one reviewed CC0 derivative, never arbitrary private model inputs.
+const reviewedModel = new Set(['assets/models/robot.glb', 'assets/models/manifest.json', 'assets/models/NOTICE.md'])
+// Explicit lossless-video exception; all other bundled media stay within 5 MiB.
+const largeMedia = { file: 'light-color-intro.mp4', bytes: 20375525, sha256: '038fd081590569d7816277d64905f5ad01cbaa4aa82e86d5467731e4ffda28a3' }
+const mediaBudget = asset => asset.file === largeMedia.file && asset.bytes === largeMedia.bytes && asset.sha256 === largeMedia.sha256 ? largeMedia.bytes : 5 * MiB
+const fileBudget = file => file === 'lib/clips.data.js' ? 40 * MiB : 25 * MiB
+const safeMediaName = file => typeof file === 'string' && /^[\p{L}\p{N}_ -]+\.mp4$/u.test(file)
+const media = policy.bundledMedia || []
+const reviewedMedia = new Map()
+const mediaIds = new Set()
+for (const asset of media) {
+  if (!/^[a-z][a-z0-9_]*$/.test(asset.id) || mediaIds.has(asset.id) || !safeMediaName(asset.file) || reviewedMedia.has('media/' + asset.file) || !Number.isInteger(asset.bytes) || asset.bytes <= 0 || asset.bytes > mediaBudget(asset) || !/^[a-f0-9]{64}$/.test(asset.sha256) || typeof asset.name !== 'string' || !asset.name.trim() || typeof asset.source !== 'string' || !asset.source.trim() || typeof asset.license !== 'string' || !asset.license.trim() || asset.license === 'UNCONFIRMED' && !(asset.file === largeMedia.file && asset.sha256 === largeMedia.sha256 && asset.distributionBasis === 'Explicit maintainer instruction to include this exact video in 0.9.2; not a copyright license or downstream rights grant')) fail('Invalid/unconfirmed bundled media record')
+  mediaIds.add(asset.id); reviewedMedia.set('media/' + asset.file, asset)
+  if (!allowed.has('media/' + asset.file)) fail('Bundled media missing from allowlist')
+}
+for (const file of historical) if (!file || file.startsWith('/') || file.split('/').some(p => !p || p === '.' || p === '..') || privateName.test(file) && !reviewedModel.has(file) && !reviewedMedia.has(file)) fail('Unsafe allowlist entry: ' + file)
 
 const secrets = [
   ['personal absolute path', /(?:\/Users\/|\/home\/)[a-zA-Z0-9_.-]+\/|[A-Z]:\\Users\\[^\\\s]+\\/],
@@ -42,8 +57,8 @@ const secrets = [
   ['credential assignment', /(?:api[_-]?key|access[_-]?token|auth[_-]?token|password)\s*[=:]\s*["'][a-zA-Z0-9_+/.=-]{16,}["']/i],
   ['recorded cookie', /(?:cookie|authorization)\s*[=:]\s*["'](?:Bearer |session=|token=)[^"'\s]{16,}/i],
 ]
-function scan(file, bytes) {
-  if (bytes.length > 25 * MiB) fail('File over 25 MiB: ' + file)
+function scan(file, bytes, limit = fileBudget(file)) {
+  if (bytes.length > limit) fail('File exceeds resource budget: ' + file)
   const value = bytes.toString('utf8')
   for (const [rule, pattern] of secrets) if (pattern.test(value)) fail(rule + ': ' + file)
 }
@@ -65,7 +80,7 @@ for (const file of files) if (!allowed.has(file)) fail('File outside public allo
 for (const file of allowed) if (!files.includes(file)) fail('Missing public file: ' + file)
 let bytes = 0
 for (const file of files) { const data = read(file); bytes += data.length; scan(file, data) }
-if (bytes > 50 * MiB) fail('Public tree exceeds 50 MiB')
+if (bytes > 100 * MiB) fail('Public tree exceeds 100 MiB')
 for (const asset of policy.documentationAssets || []) {
   if (!allowed.has(asset.path) || !Number.isInteger(asset.bytes) || asset.bytes <= 0 || asset.bytes > 5 * MiB || !/^[a-f0-9]{64}$/.test(asset.sha256) || !/^https:\/\/github\.com\/AngkinV\/Harness--docket\/blob\/[a-f0-9]{40}\//.test(asset.sourceUrl)) fail('Invalid documentation asset record')
   const data = read(asset.path)
@@ -79,16 +94,34 @@ const scriptNames = new Set(['build', 'build:client', 'typecheck', 'check:public
 for (const name of Object.keys(pkg.scripts || {})) if (!scriptNames.has(name)) fail('Unreviewed package script: ' + name)
 if (Object.keys(pkg.dependencies || {}).length || Object.keys(pkg.optionalDependencies || {}).length || pkg.workspaces) fail('Unreviewed runtime dependency/workspace')
 if (JSON.stringify(pkg.files) !== JSON.stringify(policy.packageFiles)) fail('npm files allowlist changed')
-if (json('media/clips.json').length || json('motions/motions.json').motions.length || json('lib/motions/motions.json').motions.length) fail('Private sample manifests must stay empty')
-if (!read('lib/clips.data.js').toString().startsWith('// Generated from media/clips.json.') || read('lib/clips.data.js').length > 100 || !/export const CLIPS = \[\]/.test(read('lib/clips.meta.js').toString())) fail('Embedded sample data is not empty')
+if (json('motions/motions.json').motions.length || json('lib/motions/motions.json').motions.length) fail('Private motion manifests must stay empty')
+const clipManifest = media.map(({ id, file, name }) => ({ id, file, name }))
+if (JSON.stringify(json('media/clips.json')) !== JSON.stringify(clipManifest)) fail('Bundled clip manifest mismatch')
+const clipMeta = [], clipData = []
+for (const asset of media) {
+  const data = read('media/' + asset.file)
+  if (data.length !== asset.bytes || createHash('sha256').update(data).digest('hex') !== asset.sha256) fail('Bundled media checksum mismatch: ' + asset.file)
+  const head = data.subarray(0, 65536).toString('latin1')
+  if (head.indexOf('moov') < 0 || head.indexOf('mdat') >= 0 && head.indexOf('moov') > head.indexOf('mdat')) fail('Bundled media requires faststart: ' + asset.file)
+  const b64 = data.toString('base64')
+  clipMeta.push({ id: asset.id, name: asset.name, ext: '.mp4', bytes: data.length, sha256: asset.sha256.slice(0, 16), b64: b64.length })
+  clipData.push('export const ' + asset.id + ' = ' + JSON.stringify(b64))
+}
+const generatedHeader = '// Generated from media/clips.json.\n'
+const expectedClipData = generatedHeader + clipData.join('\n') + '\n'
+const expectedClipMeta = generatedHeader + 'export const CLIPS = ' + JSON.stringify(clipMeta, null, 2) + '\n'
+if (read('lib/clips.data.js').toString() !== expectedClipData || read('lib/clips.meta.js').toString() !== expectedClipMeta) fail('Embedded media does not match reviewed source bytes')
 const pet = json('assets/pets/blue-maid/manifest.json')
+const robot = read('assets/models/robot.glb'), robotManifest = json('assets/models/manifest.json')
+const robotHash = 'ad85dd44b223c4261cd21094d0e0493fc8784f2f683eb05ddd2b6f1a6bb21abe'
+if (robotManifest.sha256 !== robotHash || robotManifest.license !== 'CC0-1.0' || robot.length !== 463988 || createHash('sha256').update(robot).digest('hex') !== robotHash) fail('Unreviewed packaged model')
 for (const clip of Object.values(pet.clips)) for (const variant of [clip, clip.hevc]) {
   if (!variant || !/^[\w-]+\.(webm|mov)$/.test(variant.file)) fail('Invalid pet media reference')
   const data = read('assets/pets/blue-maid/' + variant.file)
   if (data.length > 5 * MiB || data.length !== variant.bytes || createHash('sha256').update(data).digest('hex') !== variant.sha256) fail('Pet media checksum mismatch: ' + variant.file)
 }
 
-function git(args, limit = 30 * MiB) {
+function git(args, limit = 45 * MiB) {
   const result = spawnSync('git', args, { cwd: root, maxBuffer: limit, timeout: 60000 })
   if (result.error || result.status !== 0) fail('Git verification failed: ' + args[0])
   return result.stdout
@@ -99,7 +132,7 @@ if (process.argv.includes('--git')) {
   if (git(['rev-parse', '--is-shallow-repository']).toString().trim() !== 'false') fail('Full Git history required')
   const revisions = git(['rev-list', '--all']).toString().trim().split('\n').filter(Boolean)
   if (!revisions.length || revisions.length > 1000) fail('Missing history or history exceeds review bound')
-  const checked = new Set()
+  const checked = new Set(), checkedMedia = new Set()
   for (const rev of revisions) {
     const info = git(['show', '-s', '--format=%B%n%an <%ae>%n%cn <%ce>', rev])
     scan('commit metadata', info)
@@ -109,9 +142,28 @@ if (process.argv.includes('--git')) {
       const match = /^(\d+) blob ([a-f0-9]+)\t(.+)$/.exec(entry)
       const knownPublishedRules = match?.[1] === '100644' && match[3] === 'AGENTS.md' && match[2] === publishedAgentRulesBlob && publishedAgentRulesCommits.has(rev)
       if (!match || match[1] !== '100644' && match[1] !== '100755' || !historical.has(match[3]) && !knownPublishedRules) fail('Unreviewed path/type in Git history')
+      if (match[3] === 'assets/models/robot.glb' && createHash('sha256').update(git(['cat-file', 'blob', match[2]])).digest('hex') !== robotHash) fail('Unreviewed historical model')
+      const mediaAsset = reviewedMedia.get(match[3])
+      if (mediaAsset && createHash('sha256').update(git(['cat-file', 'blob', match[2]])).digest('hex') !== mediaAsset.sha256) fail('Unreviewed historical media')
+      const mediaKey = match[3] + ':' + match[2]
+      if (!checkedMedia.has(mediaKey)) {
+        if (match[3] === 'lib/clips.data.js') {
+          const value = git(['cat-file', 'blob', match[2]]).toString()
+          if (value !== generatedHeader + '\n' && value !== expectedClipData) fail('Unreviewed historical embedded media')
+        }
+        if (match[3] === 'lib/clips.meta.js') {
+          const value = git(['cat-file', 'blob', match[2]]).toString()
+          if (value !== generatedHeader + 'export const CLIPS = []\n' && value !== expectedClipMeta) fail('Unreviewed historical clip metadata')
+        }
+        if (match[3] === 'media/clips.json') {
+          const value = JSON.stringify(JSON.parse(git(['cat-file', 'blob', match[2]])))
+          if (value !== '[]' && value !== JSON.stringify(clipManifest)) fail('Unreviewed historical clip manifest')
+        }
+        checkedMedia.add(mediaKey)
+      }
       if (!checked.has(match[2])) {
-        if (Number(git(['cat-file', '-s', match[2]]).toString()) > 25 * MiB) fail('Oversized historical blob')
-        scan('history: ' + match[3], git(['cat-file', 'blob', match[2]])); checked.add(match[2])
+        if (Number(git(['cat-file', '-s', match[2]]).toString()) > fileBudget(match[3])) fail('Oversized historical blob')
+        scan('history: ' + match[3], git(['cat-file', 'blob', match[2]]), fileBudget(match[3])); checked.add(match[2])
       }
     }
   }
@@ -132,7 +184,7 @@ try {
   // npm <= 11 returns an array; npm 12 returns an object keyed by package name.
   pack = Array.isArray(packed) ? packed[0] : packed[pkg.name]
   if (!pack || !Array.isArray(pack.files)) fail('Unrecognized npm pack result')
-  if (pack.size > 40 * MiB || pack.unpackedSize > 50 * MiB) fail('Package exceeds resource budget')
+  if (pack.size > 64 * MiB || pack.unpackedSize > 80 * MiB) fail('Package exceeds resource budget')
   const expected = new Set(files.filter(file => file === 'package.json' || policy.packageFiles.some(prefix => file === prefix || file.startsWith(prefix + '/'))))
   for (const file of pack.files) if (!expected.delete(file.path)) fail('Unexpected package file: ' + file.path)
   if (expected.size) fail('Package missing runtime files: ' + [...expected].join(', '))

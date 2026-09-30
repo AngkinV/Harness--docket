@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "id": "brand",
+    "file": "deepseek-brand-intro.mp4",
+    "name": "DeepSeek 品牌片头"
+  },
+  {
+    "id": "cyberpunk",
+    "file": "deepseek-cyberpunk-intro.mp4",
+    "name": "DeepSeek 赛博朋克片头"
+  },
+  {
+    "id": "awakening",
+    "file": "deepseek-awakening-intro.mp4",
+    "name": "DeepSeek 数字角色苏醒"
+  },
+  {
+    "id": "lightcolor",
+    "file": "light-color-intro.mp4",
+    "name": "光影·动色"
+  }
+]
