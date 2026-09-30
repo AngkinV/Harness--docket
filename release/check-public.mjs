@@ -13,9 +13,12 @@ const read = file => readFileSync(join(root, file))
 const json = file => JSON.parse(read(file).toString())
 const policy = json('release/public-files.json')
 const allowed = new Set(policy.files)
+// Keep explicitly reviewed retired public paths for history checks only; they
+// are never allowed back into the current tree or installation package.
+const historical = new Set([...allowed, ...(policy.retiredFiles || [])])
 if (policy.schemaVersion !== 1 || allowed.size !== policy.files.length) fail('Invalid public allowlist')
 const privateName = /(?:^|\/)(?:AGENT\.md|\.env[^/]*|\.npmrc|\.pnpmrc|\.work|artifacts|models|reference|node_modules|\.git|\.codex|\.agents)(?:\/|$)|\.(?:vrm|glb|fbx|mp4|log|map|tgz|zip|db|sqlite\w*|pem|key|heapsnapshot)$/i
-for (const file of allowed) if (!file || file.startsWith('/') || file.split('/').some(p => !p || p === '.' || p === '..') || privateName.test(file)) fail('Unsafe allowlist entry: ' + file)
+for (const file of historical) if (!file || file.startsWith('/') || file.split('/').some(p => !p || p === '.' || p === '..') || privateName.test(file)) fail('Unsafe allowlist entry: ' + file)
 
 const secrets = [
   ['personal absolute path', /(?:\/Users\/|\/home\/)[a-zA-Z0-9_.-]+\/|[A-Z]:\\Users\\[^\\\s]+\\/],
@@ -86,7 +89,7 @@ if (process.argv.includes('--git')) {
     for (const email of git(['show', '-s', '--format=%ae%n%ce', rev]).toString().trim().split('\n')) if (!/^[a-zA-Z0-9+_.-]+@users\.noreply\.github\.com$/.test(email)) fail('Commit email is not a GitHub noreply address')
     for (const entry of git(['ls-tree', '-r', '-z', rev]).toString().split('\0').filter(Boolean)) {
       const match = /^(\d+) blob ([a-f0-9]+)\t(.+)$/.exec(entry)
-      if (!match || match[1] !== '100644' && match[1] !== '100755' || !allowed.has(match[3])) fail('Unreviewed path/type in Git history')
+      if (!match || match[1] !== '100644' && match[1] !== '100755' || !historical.has(match[3])) fail('Unreviewed path/type in Git history')
       if (!checked.has(match[2])) {
         if (Number(git(['cat-file', '-s', match[2]]).toString()) > 25 * MiB) fail('Oversized historical blob')
         scan('history: ' + match[3], git(['cat-file', 'blob', match[2]])); checked.add(match[2])
