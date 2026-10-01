@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "packaged:robot",
+  "name": "小机器人",
+  "file": "robot.glb",
+  "sourceUrl": "https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf/RobotExpressive",
+  "author": "Tomás Laulhé (Quaternius), modifications by Don McCurdy",
+  "license": "CC0-1.0",
+  "originalSha256": "047f5e5fb3bb6d378bd1df16ca6137f2a596c99b3a1b5690b4020c05aaf6f319",
+  "sha256": "ad85dd44b223c4261cd21094d0e0493fc8784f2f683eb05ddd2b6f1a6bb21abe",
+  "bytes": 463988,
+  "derivation": "Normalized skin weights for the self-contained GLB validator; no textures; original animations preserved.",
+  "normalizedVertices": 798
+}

@@ -10,6 +10,12 @@ artifacts/
 [Aa][Gg][Ee][Nn][Tt].[Mm][Dd]
 [Aa][Gg][Ee][Nn][Tt][Ss].[Mm][Dd]
 models/
+# Only these reviewed model assets may be tracked; other model inputs stay private.
+!/assets/models/
+/assets/models/*
+!/assets/models/NOTICE.md
+!/assets/models/manifest.json
+!/assets/models/robot.glb
 *.log
 *.tgz
 *.tar.gz

@@ -130,6 +130,16 @@ let commits = null
 if (process.argv.includes('--git')) {
   if (!existsSync(join(root, '.git')) || git(['rev-parse', '--show-toplevel']).toString().trim() !== root) fail('Use an independent public Git repository')
   if (git(['rev-parse', '--is-shallow-repository']).toString().trim() !== 'false') fail('Full Git history required')
+  // Disk-only files (including ignored files) disappear on GitHub. Check the
+  // index so a staged release can be verified before committing. The pre-push
+  // hook additionally requires the index and working tree to match HEAD.
+  const tracked = new Set()
+  for (const entry of git(['ls-files', '--stage', '-z']).toString().split('\0').filter(Boolean)) {
+    const match = /^(100644|100755) [a-f0-9]+ 0\t(.+)$/.exec(entry)
+    if (!match || !allowed.has(match[2])) fail('Unreviewed path/type or unresolved conflict in Git index')
+    tracked.add(match[2])
+  }
+  for (const file of allowed) if (!tracked.has(file)) fail('Public file missing from Git index (stage and commit before pushing): ' + file)
   const revisions = git(['rev-list', '--all']).toString().trim().split('\n').filter(Boolean)
   if (!revisions.length || revisions.length > 1000) fail('Missing history or history exceeds review bound')
   const checked = new Set(), checkedMedia = new Set()
