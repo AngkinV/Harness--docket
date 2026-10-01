@@ -343,7 +343,8 @@ npm pack --ignore-scripts --pack-destination ..
 - [NativeDog1/dsh-boot-animation](https://github.com/NativeDog1/dsh-boot-animation)：项目代码来源，保留原版权和许可。
 - [PC2005-cloud/dsh-pet](https://github.com/PC2005-cloud/dsh-pet)：透明角色动画素材。
 - [Three.js](https://threejs.org/) 与 [three-vrm](https://github.com/pixiv/three-vrm)：3D 渲染与 VRM 支持。
-
+  
+感谢 [Linux.do](https://linux.do)  社区。
 本项目为社区插件，不代表上游作者或 DeepSeek 官方背书。
 
 > [!IMPORTANT]
